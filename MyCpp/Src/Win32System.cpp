@@ -619,10 +619,7 @@ namespace MyCpp
 		path_t appCurrent = ( !appCurrentDir.empty() ) ? 
 			std::filesystem::absolute( appCurrentDir ) : GetCurrentLocation();
 
-		path_t orgCurrentDir = GetCurrentLocation();
-		::SetCurrentDirectory( to_string_t( appCurrent ).c_str() );
 		appName = to_string_t( std::filesystem::absolute( appName ) );
-		::SetCurrentDirectory( to_string_t( orgCurrentDir ).c_str() );
 
 		if ( !isQuotedName )
 		{
