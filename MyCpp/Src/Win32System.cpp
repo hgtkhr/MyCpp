@@ -5,8 +5,6 @@
 #include "MyCpp/StringUtils.hpp"
 #include "MyCpp/IntCast.hpp"
 
-#include <boost/range/algorithm/find.hpp>
-
 #include <Objbase.h>
 #include <shellapi.h>
 #include <ShlObj.h>
@@ -544,7 +542,7 @@ namespace MyCpp
 			return size;
 		} );
 
-		if ( boost::find( pids, pid ) == pids.end() )
+		if ( std::find( pids.begin(), pids.end(), pid) == pids.end() )
 			return null;
 
 		HANDLE openedProcess = ::OpenProcess( PROCESS_GET_INFO, FALSE, pid );
