@@ -29,12 +29,9 @@ namespace MyCpp
 
 	typedef std::shared_ptr< CRITICAL_SECTION > SPCRITICAL_SECTION;
 
-	enum CSSPINCOUNT : std::uint32_t
-	{
-		AUTO = static_cast< std::uint32_t >( -1 )
-	};
+	constexpr std::uint32_t CSSPIN_AUTO = 4000;
 
-	SPCRITICAL_SECTION CreateCriticalSection( std::uint32_t spinCount = CSSPINCOUNT::AUTO );
+	SPCRITICAL_SECTION CreateCriticalSection( std::uint32_t spinCount = CSSPIN_AUTO );
 
 	namespace Details
 	{
@@ -83,17 +80,17 @@ namespace MyCpp
 		return Size;
 	}
 
-	template < typename T, typename ReadHandler >
-	std::size_t do_read( std::vector< T >& v, std::size_t initialSize, ReadHandler reader )
+	template < typename Vector, typename Source >
+	std::size_t adaptive_load( Vector& v, std::size_t initn, Source source )
 	{
-		if ( v.size() < initialSize )
-			v.resize( initialSize );
+		if ( v.size() < initn )
+			v.resize( initn );
 
 		std::size_t result = 0;
 
 		while ( true )
 		{
-			result = reader( v.data(), v.size() );
+			result = source( v.data(), v.size() );
 			if ( result == 0 || result < v.size() )
 				break;
 

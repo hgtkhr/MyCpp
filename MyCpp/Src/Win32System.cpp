@@ -33,7 +33,7 @@ namespace MyCpp
 	{
 		vchar_t buffer( MAX_PATH );
 
-		do_read( buffer, buffer.size(),
+		adaptive_load( buffer, buffer.size(),
 			[&] ( LPTSTR buffer, std::size_t n )
 		{
 			return ::GetModuleFileName( hmodule, buffer, numeric_cast< DWORD >( n ) );
@@ -51,7 +51,7 @@ namespace MyCpp
 	{
 		vchar_t buffer( MAX_PATH );
 
-		do_read( buffer, buffer.size(),
+		adaptive_load( buffer, buffer.size(),
 			[&] ( LPTSTR buffer, std::size_t n )
 		{
 			return ::GetTempPath( numeric_cast< DWORD >( n ), buffer );
@@ -74,7 +74,7 @@ namespace MyCpp
 	{
 		vwchar guidStr( 40 );
 
-		do_read( guidStr, guidStr.size(),
+		adaptive_load( guidStr, guidStr.size(),
 			[&] ( LPWSTR buffer, std::size_t n )
 		{
 			int r = ::StringFromGUID2( guid, buffer, numeric_cast< int >( n ) );
@@ -137,9 +137,9 @@ namespace MyCpp
 	SPPROCESS OpenProcessByFileName( const path_t& fileName, bool inheritHandle, DWORD accessMode )
 	{
 		DWORD maxIndex = 0;
-		std::vector< DWORD > pids( 200 );
+		std::vector< DWORD > pids( 400 );
 
-		do_read( pids, pids.size(),
+		adaptive_load( pids, pids.size(),
 			[&] ( DWORD* pn, std::size_t n )
 		{
 			DWORD size;
@@ -163,7 +163,7 @@ namespace MyCpp
 			{
 				ScopedGenericHandle process( p );
 
-				do_read( exeFileName, exeFileName.size(),
+				adaptive_load( exeFileName, exeFileName.size(),
 					[&] ( char_t* s, std::size_t n )
 				{
 					DWORD size = numeric_cast< DWORD >( n );
@@ -234,7 +234,7 @@ namespace MyCpp
 	{
 		vchar_t result( MAX_PATH );
 
-		do_read( result, result.size(),
+		adaptive_load( result, result.size(),
 			[] ( LPTSTR buffer, std::size_t n )
 		{
 			return ::GetCurrentDirectory( numeric_cast< DWORD >( n ), buffer );
@@ -285,21 +285,26 @@ namespace MyCpp
 		return std::move( lock );
 	}
 
+	namespace
+	{
+		template < bool IsDebug = true >
+		struct CSFLAGS
+		{
+			static const DWORD value = 0;
+		};
+
+		template <>
+		struct CSFLAGS<false>
+		{
+			static const DWORD value = CRITICAL_SECTION_NO_DEBUG_INFO;
+		};
+	}
 
 	SPCRITICAL_SECTION CreateCriticalSection( std::uint32_t spinCount )
 	{
-#ifdef _DEBUG
-		constexpr DWORD FLAGS = 0;
-#else
-		constexpr DWORD FLAGS = CRITICAL_SECTION_NO_DEBUG_INFO;
-#endif
-
-		if ( spinCount == CSSPINCOUNT::AUTO )
-			spinCount = 4000;
-
 		LPCRITICAL_SECTION newCriticalSection = LocalAllocate< CRITICAL_SECTION >( LPTR, sizeof( CRITICAL_SECTION ) );
 
-		::InitializeCriticalSectionEx( newCriticalSection, spinCount, FLAGS );
+		::InitializeCriticalSectionEx( newCriticalSection, spinCount, CSFLAGS< ( MYCPP_DEBUG == 1 ) >::value );
 
 		return { newCriticalSection, CriticalSectionDeleter() };
 	}
@@ -395,7 +400,7 @@ namespace MyCpp
 		{
 			vchar_t buffer( MAX_PATH );
 
-			do_read( buffer, buffer.size(),
+			adaptive_load( buffer, buffer.size(),
 				[&] ( char_t* s, std::size_t n )
 			{
 				DWORD size = numeric_cast< DWORD >( n );
@@ -527,7 +532,7 @@ namespace MyCpp
 	{
 		std::vector< DWORD > pids( 200 );
 
-		do_read( pids, pids.size(),
+		adaptive_load( pids, pids.size(),
 			[&] ( DWORD* pn, std::size_t n )
 		{
 			DWORD size;
@@ -589,6 +594,28 @@ namespace MyCpp
 		return null;
 	}
 
+	namespace
+	{
+		path_t ComplatePath( const path_t& p )
+		{
+			if ( p.is_absolute() )
+				return p;
+
+			if ( p.has_parent_path() )
+				return std::filesystem::weakly_canonical( p );
+
+			string_t pstr = to_string_t( p );
+			vchar_t szSearchPath( MAX_PATH );
+
+			adaptive_load( szSearchPath, szSearchPath.size(), [&pstr] (LPTSTR s, std::size_t n)
+			{
+				return ::SearchPath( null, pstr.c_str(), null, static_cast< DWORD >( n ), s, null );
+			} );
+
+			return std::filesystem::weakly_canonical( szSearchPath.data() );
+		}
+	}
+
 	SPPROCESS StartProcess( const string_t& cmdline, const path_t& appCurrentDir, void* envVariables, int creationFlags, bool inheritHandle,  int cmdShow )
 	{
 		bool inQuote = false;
@@ -619,7 +646,7 @@ namespace MyCpp
 		path_t appCurrent = ( !appCurrentDir.empty() ) ? 
 			std::filesystem::absolute( appCurrentDir ) : GetCurrentLocation();
 
-		appName = to_string_t( std::filesystem::absolute( appName ) );
+		appName = to_string_t( ComplatePath( appName ) );
 
 		if ( !isQuotedName )
 		{
@@ -671,7 +698,7 @@ namespace MyCpp
 
 	int RunElevated( const path_t& file, const string_t& parameters, bool waitForExit, int cmdShow )
 	{
-		path_t filePath = std::filesystem::absolute( file );
+		path_t filePath = ComplatePath( file );
 
 		string_t fileInfo = to_string_t( filePath.filename() );
 		string_t directoryInfo = to_string_t( filePath.parent_path() );
@@ -722,7 +749,7 @@ namespace MyCpp
 
 		inline std::size_t GetWindowClassName( HWND hwnd, vchar_t& name )
 		{
-			return do_read( name, BUFFERSIZE,
+			return adaptive_load( name, BUFFERSIZE,
 				[&] ( LPTSTR s, std::size_t n )
 			{
 				return ::GetClassName( hwnd, s, numeric_cast< int >( n ) );
@@ -916,7 +943,7 @@ namespace MyCpp
 	{
 		vchar_t buffer( 512 );
 
-		do_read( buffer, 512, 
+		adaptive_load( buffer, 512, 
 			[&] ( LPTSTR s, std::size_t n ) 
 		{
 			DWORD r = ::GetPrivateProfileString(

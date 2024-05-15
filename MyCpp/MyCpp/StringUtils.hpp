@@ -16,18 +16,6 @@ namespace MyCpp
 		{
 			if ( capacity <= 0 )
 				return ( to == null ) ? length : 0;
-#if defined( _MSC_VER ) && _MSC_VER >= 1400 
-			auto p = std::transform(
-				from
-				, from + length
-				, stdext::make_unchecked_array_iterator( to )
-				, [] ( const charX& c ) 
-					{
-						return charY( c );
-					} );
-
-			return static_cast< std::size_t >( p.base() - to );
-#else
 			auto p = std::transform(
 				from
 				, from + length
@@ -38,7 +26,6 @@ namespace MyCpp
 			} );
 
 			return static_cast< std::size_t >( p - to );
-#endif
 		}
 	}
 

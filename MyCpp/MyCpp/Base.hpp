@@ -63,7 +63,7 @@ namespace MyCpp
 		};
 	}
 
-	constexpr auto null = Details::Null {};
+	constexpr auto null = Details::Null();
 
 	template < typename T, std::size_t N >
 	inline constexpr std::size_t length_of( T( & )[N] )

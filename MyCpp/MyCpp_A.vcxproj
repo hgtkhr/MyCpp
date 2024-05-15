@@ -44,49 +44,49 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugCrtDll|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseCrtDll|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugCrtDll|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseCrtDll|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -123,57 +123,57 @@
     <TargetName>MyCpp_A_S_D</TargetName>
     <CustomBuildBeforeTargets />
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <OutDir>$(SolutionDir)lib\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\$(CharacterSet)\</IntDir>
+    <OutDir>$(SolutionDir)lib\$(PlatformTarget)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(PlatformTarget)\$(Configuration)\$(CharacterSet)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugCrtDll|Win32'">
     <TargetName>MyCpp_A_SD_D</TargetName>
     <CustomBuildBeforeTargets />
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <OutDir>$(SolutionDir)lib\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\$(CharacterSet)\</IntDir>
+    <OutDir>$(SolutionDir)lib\$(PlatformTarget)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(PlatformTarget)\$(Configuration)\$(CharacterSet)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>MyCpp_A_S_D</TargetName>
     <CustomBuildBeforeTargets />
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\$(CharacterSet)\</IntDir>
-    <OutDir>$(SolutionDir)lib\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(PlatformTarget)\$(Configuration)\$(CharacterSet)\</IntDir>
+    <OutDir>$(SolutionDir)lib\$(PlatformTarget)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugCrtDll|x64'">
     <TargetName>MyCpp_A_SD_D</TargetName>
     <CustomBuildBeforeTargets />
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\$(CharacterSet)\</IntDir>
-    <OutDir>$(SolutionDir)lib\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(PlatformTarget)\$(Configuration)\$(CharacterSet)\</IntDir>
+    <OutDir>$(SolutionDir)lib\$(PlatformTarget)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <CustomBuildBeforeTargets />
     <TargetName>MyCpp_A_S</TargetName>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <OutDir>$(SolutionDir)lib\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\$(CharacterSet)\</IntDir>
+    <OutDir>$(SolutionDir)lib\$(PlatformTarget)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(PlatformTarget)\$(Configuration)\$(CharacterSet)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseCrtDll|Win32'">
     <CustomBuildBeforeTargets />
     <TargetName>MyCpp_A_SD</TargetName>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <OutDir>$(SolutionDir)lib\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\$(CharacterSet)\</IntDir>
+    <OutDir>$(SolutionDir)lib\$(PlatformTarget)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(PlatformTarget)\$(Configuration)\$(CharacterSet)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <CustomBuildBeforeTargets />
     <TargetName>MyCpp_A_S</TargetName>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\$(CharacterSet)\</IntDir>
-    <OutDir>$(SolutionDir)lib\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(PlatformTarget)\$(Configuration)\$(CharacterSet)\</IntDir>
+    <OutDir>$(SolutionDir)lib\$(PlatformTarget)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseCrtDll|x64'">
     <CustomBuildBeforeTargets />
     <TargetName>MyCpp_A_SD</TargetName>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\$(CharacterSet)\</IntDir>
-    <OutDir>$(SolutionDir)lib\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(PlatformTarget)\$(Configuration)\$(CharacterSet)\</IntDir>
+    <OutDir>$(SolutionDir)lib\$(PlatformTarget)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -181,16 +181,14 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PreprocessorDefinitions>_DEBUG;WIN32;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MYCPP_DEBUG=1;_DEBUG;WIN32;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <PreBuildEvent />
     <PostBuildEvent>
-      <Command>XCopy /D /Y "$(ProjectDir)MyCpp\*" "D:\DevTools\Libraries\MyCpp\Include\MyCpp\*"
-Copy /Y "$(OutputPath)$(TargetFileName)" "D:\DevTools\Libraries\MyCpp\Lib\$(ProcessorArchitecture)\$(TargetFileName)"
-Copy /Y "$(OutDir)$(TargetName).pdb" "D:\DevTools\Libraries\MyCpp\Lib\$(ProcessorArchitecture)\$(TargetName).pdb"
-</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <Lib />
     <Lib />
@@ -201,16 +199,14 @@ Copy /Y "$(OutDir)$(TargetName).pdb" "D:\DevTools\Libraries\MyCpp\Lib\$(Processo
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PreprocessorDefinitions>_DEBUG;WIN32;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MYCPP_DEBUG=1;_DEBUG;WIN32;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <PreBuildEvent />
     <PostBuildEvent>
-      <Command>XCopy /D /Y "$(ProjectDir)MyCpp\*" "D:\DevTools\Libraries\MyCpp\Include\MyCpp\*"
-Copy /Y "$(OutputPath)$(TargetFileName)" "D:\DevTools\Libraries\MyCpp\Lib\$(ProcessorArchitecture)\$(TargetFileName)"
-Copy /Y "$(OutDir)$(TargetName).pdb" "D:\DevTools\Libraries\MyCpp\Lib\$(ProcessorArchitecture)\$(TargetName).pdb"
-</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <Lib />
     <Lib />
@@ -221,19 +217,17 @@ Copy /Y "$(OutDir)$(TargetName).pdb" "D:\DevTools\Libraries\MyCpp\Lib\$(Processo
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PreprocessorDefinitions>_DEBUG;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MYCPP_DEBUG=1;MYCPP_DEBUG=1;_DEBUG;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <PreBuildEvent />
     <PostBuildEvent />
     <Lib />
     <Lib />
     <PostBuildEvent>
-      <Command>XCopy /D /Y "$(ProjectDir)MyCpp\*" "D:\DevTools\Libraries\MyCpp\Include\MyCpp\*"
-Copy /Y "$(OutputPath)$(TargetFileName)" "D:\DevTools\Libraries\MyCpp\Lib\$(ProcessorArchitecture)\$(TargetFileName)"
-Copy /Y "$(OutDir)$(TargetName).pdb" "D:\DevTools\Libraries\MyCpp\Lib\$(ProcessorArchitecture)\$(TargetName).pdb"
-</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugCrtDll|x64'">
@@ -242,19 +236,17 @@ Copy /Y "$(OutDir)$(TargetName).pdb" "D:\DevTools\Libraries\MyCpp\Lib\$(Processo
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PreprocessorDefinitions>_DEBUG;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MYCPP_DEBUG=1;MYCPP_DEBUG=1;_DEBUG;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <PreBuildEvent />
     <PostBuildEvent />
     <Lib />
     <Lib />
     <PostBuildEvent>
-      <Command>XCopy /D /Y "$(ProjectDir)MyCpp\*" "D:\DevTools\Libraries\MyCpp\Include\MyCpp\*"
-Copy /Y "$(OutputPath)$(TargetFileName)" "D:\DevTools\Libraries\MyCpp\Lib\$(ProcessorArchitecture)\$(TargetFileName)"
-Copy /Y "$(OutDir)$(TargetName).pdb" "D:\DevTools\Libraries\MyCpp\Lib\$(ProcessorArchitecture)\$(TargetName).pdb"
-</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -266,9 +258,9 @@ Copy /Y "$(OutDir)$(TargetName).pdb" "D:\DevTools\Libraries\MyCpp\Lib\$(Processo
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DebugInformationFormat>None</DebugInformationFormat>
-      <PreprocessorDefinitions>NDEBUG;WIN32;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MYCPP_DEBUG=0;NDEBUG;WIN32;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -276,9 +268,8 @@ Copy /Y "$(OutDir)$(TargetName).pdb" "D:\DevTools\Libraries\MyCpp\Lib\$(Processo
     </Link>
     <PreBuildEvent />
     <PostBuildEvent>
-      <Command>XCopy /D /Y "$(ProjectDir)MyCpp\*" "D:\DevTools\Libraries\MyCpp\Include\MyCpp\*"
-Copy /Y "$(OutputPath)$(TargetFileName)" "D:\DevTools\Libraries\MyCpp\Lib\$(ProcessorArchitecture)\$(TargetFileName)"
-</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <Lib />
     <Lib />
@@ -292,9 +283,9 @@ Copy /Y "$(OutputPath)$(TargetFileName)" "D:\DevTools\Libraries\MyCpp\Lib\$(Proc
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <DebugInformationFormat>None</DebugInformationFormat>
-      <PreprocessorDefinitions>NDEBUG;WIN32;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MYCPP_DEBUG=0;NDEBUG;WIN32;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -302,9 +293,8 @@ Copy /Y "$(OutputPath)$(TargetFileName)" "D:\DevTools\Libraries\MyCpp\Lib\$(Proc
     </Link>
     <PreBuildEvent />
     <PostBuildEvent>
-      <Command>XCopy /D /Y "$(ProjectDir)MyCpp\*" "D:\DevTools\Libraries\MyCpp\Include\MyCpp\*"
-Copy /Y "$(OutputPath)$(TargetFileName)" "D:\DevTools\Libraries\MyCpp\Lib\$(ProcessorArchitecture)\$(TargetFileName)"
-</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <Lib />
     <Lib />
@@ -318,9 +308,9 @@ Copy /Y "$(OutputPath)$(TargetFileName)" "D:\DevTools\Libraries\MyCpp\Lib\$(Proc
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DebugInformationFormat>None</DebugInformationFormat>
-      <PreprocessorDefinitions>NDEBUG;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MYCPP_DEBUG=0;NDEBUG;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -331,9 +321,8 @@ Copy /Y "$(OutputPath)$(TargetFileName)" "D:\DevTools\Libraries\MyCpp\Lib\$(Proc
     <Lib />
     <Lib />
     <PostBuildEvent>
-      <Command>XCopy /D /Y "$(ProjectDir)MyCpp\*" "D:\DevTools\Libraries\MyCpp\Include\MyCpp\*"
-Copy /Y "$(OutputPath)$(TargetFileName)" "D:\DevTools\Libraries\MyCpp\Lib\$(ProcessorArchitecture)\$(TargetFileName)"
-</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseCrtDll|x64'">
@@ -345,9 +334,9 @@ Copy /Y "$(OutputPath)$(TargetFileName)" "D:\DevTools\Libraries\MyCpp\Lib\$(Proc
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <DebugInformationFormat>None</DebugInformationFormat>
-      <PreprocessorDefinitions>NDEBUG;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MYCPP_DEBUG=0;NDEBUG;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -358,9 +347,8 @@ Copy /Y "$(OutputPath)$(TargetFileName)" "D:\DevTools\Libraries\MyCpp\Lib\$(Proc
     <Lib />
     <Lib />
     <PostBuildEvent>
-      <Command>XCopy /D /Y "$(ProjectDir)MyCpp\*" "D:\DevTools\Libraries\MyCpp\Include\MyCpp\*"
-Copy /Y "$(OutputPath)$(TargetFileName)" "D:\DevTools\Libraries\MyCpp\Lib\$(ProcessorArchitecture)\$(TargetFileName)"
-</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
