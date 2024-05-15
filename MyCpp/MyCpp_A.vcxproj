@@ -365,7 +365,6 @@
     <ClInclude Include="MyCpp\Win32Memory.hpp" />
     <ClInclude Include="MyCpp\Win32SafeHandle.hpp" />
     <ClInclude Include="MyCpp\Win32System.hpp" />
-    <ClInclude Include="Src\ImportLibs.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

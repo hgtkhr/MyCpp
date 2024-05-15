@@ -49,8 +49,5 @@
     <ClInclude Include="MyCpp\Win32System.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Src\ImportLibs.hpp">
-      <Filter>ソース ファイル</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>
