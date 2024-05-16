@@ -16,7 +16,7 @@ namespace MyCpp
 			if ( length > SINTMAX || capacity > SINTMAX )
 				exception< std::length_error >( FUNC_ERROR_MSG( "XStrToYStr", "Too large size is specified." ) );
 
-			int r = ::MultiByteToWideChar( CP_ACP, 0, from, numeric_cast< int >( length ), to, numeric_cast< int >( capacity ) );
+			int r = ::MultiByteToWideChar( CP_THREAD_ACP, 0, from, numeric_cast< int >( length ), to, numeric_cast< int >( capacity ) );
 
 			if ( r == 0 )
 				exception< std::runtime_error >( FUNC_ERROR_ID( "MultiByteToWideChar", ::GetLastError() ) );
@@ -32,7 +32,7 @@ namespace MyCpp
 			if ( length > SINTMAX || capacity > SINTMAX )
 				exception< std::length_error >( FUNC_ERROR_MSG( "XStrToYStr", "Too large size is specified." ) );
 
-			int r = ::WideCharToMultiByte( CP_ACP, 0, from, numeric_cast< int >( length ), to, numeric_cast< int >( capacity ), null, null );
+			int r = ::WideCharToMultiByte( CP_THREAD_ACP, 0, from, numeric_cast< int >( length ), to, numeric_cast< int >( capacity ), null, null );
 
 			if ( r == 0 )
 				exception< std::runtime_error >( FUNC_ERROR_ID( "WideCharToMultiByte", ::GetLastError() ) );

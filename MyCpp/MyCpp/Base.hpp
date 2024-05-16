@@ -44,17 +44,17 @@ namespace MyCpp
 		{
 		public:
 			template< typename T >
-			operator T () const
+			constexpr operator T () const
 			{
 				return {};
 			}
 			template< typename T >
-			operator T* ( ) const
+			constexpr operator T* ( ) const
 			{
 				return nullptr;
 			}
 			template< typename T, typename C >
-			operator T C::* ( ) const
+			constexpr operator T C::* ( ) const
 			{
 				return nullptr;
 			}

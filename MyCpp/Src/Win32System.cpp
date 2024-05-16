@@ -288,13 +288,13 @@ namespace MyCpp
 		template < bool IsDebug = true >
 		struct CSFLAGS
 		{
-			static const DWORD value = 0;
+			static constexpr DWORD value = 0;
 		};
 
 		template <>
 		struct CSFLAGS<false>
 		{
-			static const DWORD value = CRITICAL_SECTION_NO_DEBUG_INFO;
+			static constexpr DWORD value = CRITICAL_SECTION_NO_DEBUG_INFO;
 		};
 	}
 
