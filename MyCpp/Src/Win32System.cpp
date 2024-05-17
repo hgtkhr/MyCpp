@@ -749,8 +749,6 @@ namespace MyCpp
 
 	namespace
 	{
-		constexpr std::size_t BUFFERSIZE = 256;
-
 		struct FINDWINDOWINFO
 		{
 			HWND hwnd;
@@ -762,7 +760,7 @@ namespace MyCpp
 
 		inline std::size_t GetWindowClassName( HWND hwnd, vchar_t& name )
 		{
-			return adaptive_load( name, BUFFERSIZE,
+			return adaptive_load( name, name.size(),
 				[&] ( LPTSTR s, std::size_t n )
 			{
 				return ::GetClassName( hwnd, s, numeric_cast< int >( n ) );
@@ -788,17 +786,13 @@ namespace MyCpp
 			vchar_t& buffer = *p->pWorkBuffer;
 
 			GetWindowClassName( hwnd, buffer );
-
 			if ( ::_tcsicmp( cstr_t( buffer ), p->className ) == 0 )
 			{
 				GetWindowName( hwnd, buffer );
-
 				if ( ::_tcsicmp( cstr_t( buffer ), p->windowName ) == 0 )
 				{
 					DWORD pid;
-
 					::GetWindowThreadProcessId( hwnd, &pid );
-
 					if ( pid == p->pid )
 					{
 						p->hwnd = hwnd;
@@ -817,7 +811,7 @@ namespace MyCpp
 		if ( !process )
 			return null;
 
-		vchar_t buffer( BUFFERSIZE );
+		vchar_t buffer( 256 );
 		FINDWINDOWINFO fwi = { null, process->GetId(), wndClassName.c_str(), wndName.c_str(), &buffer };
 
 		::EnumWindows( EnumWindowsProc, pointer_int_cast< LPARAM >( &fwi ) );
@@ -860,7 +854,7 @@ namespace MyCpp
 				{
 					std::uint32_t n = std::min( static_cast< DWORD >( size ), returnedSize );
 
-					if ( p != ptr )
+					if ( ptr != null && p != ptr )
 						std::memcpy( ptr, p, n );
 
 					return n;
@@ -956,7 +950,7 @@ namespace MyCpp
 	{
 		vchar_t buffer( 512 );
 
-		adaptive_load( buffer, 512, 
+		adaptive_load( buffer, buffer.size(),
 			[&] ( LPTSTR s, std::size_t n ) 
 		{
 			DWORD r = ::GetPrivateProfileString(
