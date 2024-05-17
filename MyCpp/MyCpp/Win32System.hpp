@@ -9,7 +9,7 @@ namespace MyCpp
 
 	namespace Details
 	{
-		template < typename bool IsNative = true >
+		template < bool IsNativeString = true >
 		struct p2s_policy
 		{
 			static const string_t& string( const path_t& p ) { return p.native(); }
