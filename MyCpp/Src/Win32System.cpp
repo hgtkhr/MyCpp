@@ -610,8 +610,23 @@ namespace MyCpp
 				return ::SearchPath( null, pstr.c_str(), null, static_cast< DWORD >( n ), s, null );
 			} );
 
+			if ( _tcslen( cstr_t( szSearchPath ) ) == 0 )
+				return std::filesystem::weakly_canonical( p );
+
 			return std::filesystem::weakly_canonical( szSearchPath.data() );
 		}
+	}
+
+	path_t FindFilePath( const string_t& filename, const string_t& ext )
+	{
+		vchar_t szSearchPath( MAX_PATH );
+
+		adaptive_load( szSearchPath, szSearchPath.size(), [&filename, &ext] ( LPTSTR s, std::size_t n )
+		{
+			return ::SearchPath( null, filename.c_str(), ( !ext.empty() ) ? ext.c_str() : null, static_cast< DWORD >( n ), s, null );
+		} );
+
+		return szSearchPath.data();
 	}
 
 	SPPROCESS StartProcess( const string_t& cmdline, const path_t& appCurrentDir, void* envVariables, int creationFlags, bool inheritHandle,  int cmdShow )

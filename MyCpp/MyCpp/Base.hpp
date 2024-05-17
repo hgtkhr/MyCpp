@@ -59,11 +59,19 @@ namespace MyCpp
 				return nullptr;
 			}
 
+			Null() = default;
+
+			Null( const Null& ) = delete;
+			Null( const Null&& ) = delete;
+
+			Null& operator = ( const Null& ) = delete;
+			Null& operator = ( const Null&& ) = delete;
+
 			void operator & () const = delete;
 		};
 	}
 
-	constexpr auto null = Details::Null();
+	constexpr Details::Null null;
 
 	template < typename T, std::size_t N >
 	inline constexpr std::size_t length_of( T( & )[N] )

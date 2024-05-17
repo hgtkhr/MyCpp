@@ -73,10 +73,12 @@ namespace MyCpp
 		{
 			buffer< char_t > temp;
 			auto a = temp.get( _sctprintf( fmt, args ... ) + 1 );
+
 			_sntprintf_s( a.first, a.second, _TRUNCATE, fmt, args ... );
 
 			auto converter = narrow_wide_converter< char >( a.first );
 			auto b = output.get( converter.requires_size() );
+
 			converter.convert( b.first, b.second );
 		}
 
@@ -113,7 +115,9 @@ namespace MyCpp
 		Details::buffer< char_t > message;
 		auto converter = narrow_wide_converter< char_t >( what );
 		auto mem = message.get( converter.requires_size() );
+
 		converter.convert( mem.first, mem.second );
+
 		notfier( mem.first );
 	}
 }

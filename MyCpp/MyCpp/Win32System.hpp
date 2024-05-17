@@ -108,6 +108,7 @@ namespace MyCpp
 	path_t GetSpecialFolderLocation( const GUID& folderId );
 	path_t GetTemporaryPath();
 	path_t GetTemporaryFileName( const string_t& prefix );
+	path_t FindFilePath( const string_t& filename, const string_t& ext = null );
 
 	string_t ToGuidString( const GUID& guid );
 
