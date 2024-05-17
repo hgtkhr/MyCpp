@@ -197,9 +197,10 @@ namespace MyCpp
 	namespace Details
 	{
 		// unsigned
-		template <
+		template 
+		<
 			typename Int,
-			type_enable_if< std::is_unsigned< Int >::value > = enabler
+			std::enable_if_t< std::is_unsigned_v< Int >, bool > = true
 		>
 		inline Int GetIniInt( const path_t& file, const string_t& section, const string_t& name )
 		{
@@ -207,9 +208,10 @@ namespace MyCpp
 		}
 
 		// signed
-		template <
+		template 
+		<
 			typename Int,
-			type_enable_if< !std::is_unsigned< Int >::value > = enabler
+			std::enable_if_t< !std::is_unsigned_v< Int >, bool > = true
 		>
 		inline Int GetIniInt( const path_t& file, const string_t& section, const string_t& name )
 		{
@@ -217,9 +219,10 @@ namespace MyCpp
 		}
 
 		// Primitive Data Type 
-		template <
+		template 
+		<
 			typename DataType,
-			type_enable_if< std::is_standard_layout< DataType >::value > = enabler
+			std::enable_if_t< std::is_standard_layout_v< DataType > && std::is_trivial_v< DataType >, bool > = true
 		>
 		inline bool GetIniData( const path_t& file, const string_t& section, const string_t& name, DataType& data )
 		{
@@ -227,9 +230,10 @@ namespace MyCpp
 		}
 
 		// Not Primitive Data Type 
-		template <
+		template
+		<
 			typename DataType,
-			type_enable_if< !std::is_standard_layout< DataType >::value > = enabler
+			std::enable_if_t< !std::is_standard_layout_v< DataType > || !std::is_trivial_v< DataType >, bool > = true
 		>
 		inline bool GetIniData( const path_t& file, const string_t& section, const string_t& name, DataType& data )
 		{
@@ -237,9 +241,10 @@ namespace MyCpp
 		}
 			
 		// unsigned
-		template <
+		template 
+		<
 			typename Int,
-			type_enable_if< std::is_unsigned< Int >::value > = enabler
+			std::enable_if_t< std::is_unsigned_v< Int >, bool > = true
 		>
 		inline void SetIniInt( const path_t& file, const string_t& section, const string_t& name, Int value )
 		{
@@ -247,9 +252,10 @@ namespace MyCpp
 		}
 
 		// signed
-		template <
+		template 
+		<
 			typename Int,
-			type_enable_if< !std::is_unsigned< Int >::value > = enabler
+			std::enable_if_t< !std::is_unsigned_v< Int >, bool > = true
 		>
 		inline void SetIniInt( const path_t& file, const string_t& section, const string_t& name, Int value )
 		{
@@ -257,9 +263,10 @@ namespace MyCpp
 		}
 
 		// Primitive Data Type 
-		template <
+		template
+		<
 			typename DataType,
-			type_enable_if< std::is_standard_layout< DataType >::value > = enabler
+			std::enable_if_t< std::is_standard_layout_v< DataType > && std::is_trivial_v< DataType >, bool > = true
 		>
 		inline void SetIniData( const path_t& file, const string_t& section, const string_t& name, const DataType& data )
 		{
@@ -267,9 +274,10 @@ namespace MyCpp
 		}
 			
 		// Not Primitive Data Type
-		template <
+		template
+		<
 			typename DataType,
-			type_enable_if< !std::is_standard_layout< DataType >::value > = enabler
+			std::enable_if_t< !std::is_standard_layout_v< DataType > || !std::is_trivial_v< DataType >, bool > = true
 		>
 		inline void SetIniData( const path_t& file, const string_t& section, const string_t& name, const DataType& data )
 		{

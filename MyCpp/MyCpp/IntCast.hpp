@@ -9,73 +9,71 @@ namespace MyCpp
 {
 	namespace Details
 	{
-		typedef std::nullptr_t enabler_t;
-
-		constexpr enabler_t enabler = nullptr;
-
-		template < bool Cond >
-		using type_enable_if = typename std::enable_if< Cond, enabler_t >::type;
-
-	// unsigned int -> pointer
-		template <
+		// unsigned int -> pointer
+		template 
+		<
 			typename T,
 			typename U,
-			type_enable_if< std::is_unsigned< U >::value > = enabler
+			std::enable_if_t< std::is_unsigned_v< U >, bool > = true
 		>
 			inline
-			typename std::enable_if< std::is_pointer< T >::value, T >::type
+			std::enable_if_t< std::is_pointer_v< T >, T >
 			reinterpret_pointer( U value )
 		{
 			return reinterpret_cast< T >( static_cast< std::uintptr_t >( value ) );
 		}
 
 		// signed int -> pointer
-		template <
+		template
+		<
 			typename T,
 			typename U,
-			type_enable_if< !std::is_unsigned< U >::value > = enabler
+			std::enable_if_t< !std::is_unsigned_v< U >, bool > = true
 		>
 			inline
-			typename std::enable_if< std::is_pointer< T >::value, T >::type
+			std::enable_if_t< std::is_pointer_v< T >, T >
 			reinterpret_pointer( U value )
 		{
 			return reinterpret_cast< T >( static_cast< std::intptr_t >( value ) );
 		}
 
 		// pointer -> unsigned int 
-		template <
+		template
+		<
 			typename T,
 			typename U,
-			type_enable_if< std::is_pointer< U >::value > = enabler
+			std::enable_if_t< std::is_pointer_v< U >, bool > = true
 		>
 			inline
-			typename std::enable_if< std::is_unsigned< T >::value, T >::type
+			std::enable_if_t< std::is_unsigned_v< T >, T >
 			reinterpret_pointer( U value )
 		{
 			return static_cast< T >( reinterpret_cast< std::uintptr_t >( value ) );
 		}
 
 		// pointer -> signed int 
-		template <
+		template
+		<
 			typename T,
 			typename U,
-			type_enable_if< std::is_pointer< U >::value > = enabler
+			std::enable_if_t< std::is_pointer_v< U >, bool > = true
 		>
 			inline
-			typename std::enable_if< !std::is_unsigned< T >::value, T >::type
+			std::enable_if_t< !std::is_unsigned_v< T >, T >
 			reinterpret_pointer( U value )
 		{
 			return static_cast< T >( reinterpret_cast< std::intptr_t >( value ) );
 		}
 
 		// unsigned intX -> unsigned intY
-		template <
+		template
+		<
 			typename T,
 			typename U,
-			type_enable_if< std::is_unsigned< U >::value > = enabler
+			std::enable_if_t< std::is_unsigned_v< U >, bool > = true
 		>
 			inline
-			typename std::enable_if< std::is_unsigned< T >::value, T >::type
+			std::enable_if_t< std::is_unsigned_v< T >, T >
 			trunc_over_numeric_limits( U value )
 		{
 			if ( value > std::numeric_limits< T >::max() )
@@ -85,13 +83,14 @@ namespace MyCpp
 		}
 
 		// signed intX -> unsigned intY
-		template <
+		template
+		<
 			typename T,
 			typename U,
-			type_enable_if< !std::is_unsigned< U >::value > = Details::enabler
+			std::enable_if_t< !std::is_unsigned_v< U >, bool > = true
 		>
 			inline
-			typename std::enable_if< std::is_unsigned< T >::value, T >::type
+			std::enable_if_t< std::is_unsigned_v< T >, T >
 			trunc_over_numeric_limits( U value )
 		{
 			typedef typename std::make_unsigned< U >::type unsigned_U;
@@ -105,13 +104,14 @@ namespace MyCpp
 		}
 
 		// unsigned intX -> signed intY
-		template <
+		template
+		<
 			typename T,
 			typename U,
-			type_enable_if< std::is_unsigned< U >::value > = Details::enabler
+			std::enable_if_t< std::is_unsigned_v< U >, bool > = true
 		>
 			inline
-			typename std::enable_if< !std::is_unsigned< T >::value, T >::type
+			std::enable_if_t< !std::is_unsigned_v< T >, T >
 			trunc_over_numeric_limits( U value )
 		{
 			typedef typename std::make_signed< U >::type signed_U;
@@ -126,13 +126,14 @@ namespace MyCpp
 		}
 
 		// signed intX -> signed intY
-		template <
+		template
+		<
 			typename T,
 			typename U,
-			type_enable_if< !std::is_unsigned< U >::value > = Details::enabler
+			std::enable_if_t< !std::is_unsigned_v< U >, bool > = true
 		>
 			inline
-			typename std::enable_if< !std::is_unsigned< T >::value, T >::type
+			std::enable_if_t< !std::is_unsigned_v< T >, T >
 			trunc_over_numeric_limits( U value )
 		{
 			if ( value > std::numeric_limits< T >::max() )
