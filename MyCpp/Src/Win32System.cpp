@@ -607,7 +607,7 @@ namespace MyCpp
 
 			adaptive_load( szSearchPath, szSearchPath.size(), [&pstr] (LPTSTR s, std::size_t n)
 			{
-				return ::SearchPath( null, pstr.c_str(), null, static_cast< DWORD >( n ), s, null );
+				return ::SearchPath( null, pstr.c_str(), null, numeric_cast< DWORD >( n ), s, null );
 			} );
 
 			if ( _tcslen( cstr_t( szSearchPath ) ) == 0 )
@@ -623,7 +623,7 @@ namespace MyCpp
 
 		adaptive_load( szSearchPath, szSearchPath.size(), [&filename, &ext] ( LPTSTR s, std::size_t n )
 		{
-			return ::SearchPath( null, filename.c_str(), ( !ext.empty() ) ? ext.c_str() : null, static_cast< DWORD >( n ), s, null );
+			return ::SearchPath( null, filename.c_str(), ( !ext.empty() ) ? ext.c_str() : null, numeric_cast< DWORD >( n ), s, null );
 		} );
 
 		return szSearchPath.data();
@@ -690,17 +690,16 @@ namespace MyCpp
 
 		PROCESS_INFORMATION pi;
 
-		BOOL result = ::CreateProcess(
-			appName.c_str()
-			, cstr_t( cmdLineArgs )
-			, null
-			, null
-			, ( inheritHandle ) ? TRUE : FALSE
-			, creationFlags
-			, envVariables
-			, to_string_t( appCurrent ).c_str()
-			, &si
-			, &pi );
+		BOOL result = ::CreateProcess( appName.c_str()
+									   , cstr_t( cmdLineArgs )
+									   , null
+									   , null
+									   , ( inheritHandle ) ? TRUE : FALSE
+									   , creationFlags
+									   , envVariables
+									   , to_string_t( appCurrent ).c_str()
+									   , &si
+									   , &pi );
 
 		if ( result == FALSE )
 			exception< std::runtime_error >( FUNC_ERROR_MSG( "CreateProcess", "Failed. CommandLine = '%s', (0x%08x)", cmdLineArgs, ::GetLastError() ) );
@@ -796,7 +795,6 @@ namespace MyCpp
 					if ( pid == p->pid )
 					{
 						p->hwnd = hwnd;
-
 						return FALSE;
 					}
 				}
@@ -953,25 +951,35 @@ namespace MyCpp
 		adaptive_load( buffer, buffer.size(),
 			[&] ( LPTSTR s, std::size_t n ) 
 		{
-			DWORD r = ::GetPrivateProfileString(
-				section.c_str()
-				, name.c_str()
-				, defaultValue.c_str()
-				, s
-				, numeric_cast< DWORD >( n )
-				, to_string_t( file ).c_str() );
-
+			DWORD r = ::GetPrivateProfileString( section.c_str()
+												 , name.c_str()
+												 , defaultValue.c_str()
+												 , s
+												 , numeric_cast< DWORD >( n )
+												 , to_string_t( file ).c_str() );
 			return ( r == n - 1 ) ? r + 1 : r;
 		} );
 
 		return cstr_t( buffer );
 	}
 
+	bool GetIniBinary( const path_t& file, const string_t& section, const string_t& name, void* ptr, std::uint32_t size )
+	{
+		return ( ::GetPrivateProfileStruct( section.c_str(), name.c_str(), ptr, size, to_string_t( file ).c_str() ) != FALSE );
+	}
+
 	void SetIniString( const path_t& file, const string_t& section, const string_t& name, const string_t& value )
 	{
-		LPCTSTR pname = ( !name.empty() ) ? name.c_str() : null;
-		LPCTSTR pvalue = ( !value.empty() ) ? value.c_str() : null;
+		LPCTSTR pszName = ( !name.empty() ) ? name.c_str() : null;
+		LPCTSTR pszValue = ( !value.empty() ) ? value.c_str() : null;
 
-		::WritePrivateProfileString( section.c_str(), pname, pvalue, to_string_t( file ).c_str() );
+		::WritePrivateProfileString( section.c_str(), pszName, pszValue, to_string_t( file ).c_str() );
+	}
+
+	void SetIniBinary( const path_t& file, const string_t& section, const string_t& name, const void* ptr, std::uint32_t size )
+	{
+		LPCTSTR pszName = ( !name.empty() ) ? name.c_str() : null;
+
+		::WritePrivateProfileStruct( section.c_str(), pszName, const_cast< void* >( ptr ), size, to_string_t( file ).c_str() );
 	}
 }

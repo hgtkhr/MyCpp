@@ -190,7 +190,9 @@ namespace MyCpp
 	int RunElevated( const path_t& file, const string_t& parameters = null, bool waitForExit = true, int cmdShow = SW_SHOWDEFAULT );
 
 	string_t GetIniString( const path_t& file, const string_t& section, const string_t& name, const string_t& defaultValue = null );
+	bool GetIniBinary( const path_t& file, const string_t& section, const string_t& name, void* ptr, std::uint32_t size );
 	void SetIniString( const path_t& file, const string_t& section, const string_t& name, const string_t& value );
+	void SetIniBinary( const path_t& file, const string_t& section, const string_t& name, const void* ptr, std::uint32_t size );
 
 	namespace Details
 	{
@@ -199,7 +201,7 @@ namespace MyCpp
 			typename Int,
 			type_enable_if< std::is_unsigned< Int >::value > = enabler
 		>
-			inline Int GetIniInt( const path_t& file, const string_t& section, const string_t& name )
+		inline Int GetIniInt( const path_t& file, const string_t& section, const string_t& name )
 		{
 			return static_cast< Int >( std::stoull( GetIniString( file, section, name ), null, 10 ) );
 		}
@@ -209,17 +211,37 @@ namespace MyCpp
 			typename Int,
 			type_enable_if< !std::is_unsigned< Int >::value > = enabler
 		>
-			inline Int GetIniInt( const path_t& file, const string_t& section, const string_t& name )
+		inline Int GetIniInt( const path_t& file, const string_t& section, const string_t& name )
 		{
 			return static_cast< Int >( std::stoll( GetIniString( file, section, name ), null, 10 ) );
 		}
 
+		// Primitive Data Type 
+		template <
+			typename DataType,
+			type_enable_if< std::is_standard_layout< DataType >::value > = enabler
+		>
+		inline bool GetIniData( const path_t& file, const string_t& section, const string_t& name, DataType& data )
+		{
+			return GetIniBinary( file, section, name, &data, sizeof( DataType ) );
+		}
+
+		// Not Primitive Data Type 
+		template <
+			typename DataType,
+			type_enable_if< !std::is_standard_layout< DataType >::value > = enabler
+		>
+		inline bool GetIniData( const path_t& file, const string_t& section, const string_t& name, DataType& data )
+		{
+			return data.LoadFromIni( std::make_tuple( file, section, name ) );
+		}
+			
 		// unsigned
 		template <
 			typename Int,
 			type_enable_if< std::is_unsigned< Int >::value > = enabler
 		>
-			inline void SetIniInt( const path_t& file, const string_t& section, const string_t& name, Int value )
+		inline void SetIniInt( const path_t& file, const string_t& section, const string_t& name, Int value )
 		{
 			SetIniString( file, section, name, strprintf( _T( "%I64u" ), static_cast< uint64_t >( value ) ) );
 		}
@@ -229,9 +251,29 @@ namespace MyCpp
 			typename Int,
 			type_enable_if< !std::is_unsigned< Int >::value > = enabler
 		>
-			inline void SetIniInt( const path_t& file, const string_t& section, const string_t& name, Int value )
+		inline void SetIniInt( const path_t& file, const string_t& section, const string_t& name, Int value )
 		{
 			SetIniString( file, section, name, strprintf( _T( "%I64" ), static_cast< uint64_t >( value ) ) );
+		}
+
+		// Primitive Data Type 
+		template <
+			typename DataType,
+			type_enable_if< std::is_standard_layout< DataType >::value > = enabler
+		>
+		inline void SetIniData( const path_t& file, const string_t& section, const string_t& name, const DataType& data )
+		{
+			SetIniBinary( file, section, name, &data, sizeof( DataType ) );
+		}
+			
+		// Not Primitive Data Type
+		template <
+			typename DataType,
+			type_enable_if< !std::is_standard_layout< DataType >::value > = enabler
+		>
+		inline void SetIniData( const path_t& file, const string_t& section, const string_t& name, const DataType& data )
+		{
+			data.SaveToIni( std::make_tuple( file, section, name ) );
 		}
 	}
 
@@ -246,6 +288,19 @@ namespace MyCpp
 	{
 		Details::SetIniInt( file, section, name, value );
 	}
+
+	template < typename DataType >
+	inline bool GetIniData( const path_t& file, const string_t& section, const string_t& name, DataType& data )
+	{
+		return Details::GetIniData( file, section, name, data );
+	}
+
+	template < typename DataType >
+	inline void SetIniData( const path_t& file, const string_t& section, const string_t& name, const DataType& data )
+	{
+		Details::SetIniData( file, section, name, data );
+	}
+
 }
 
 #if defined( MYCPP_GLOBALTYPEDES )
