@@ -1,4 +1,9 @@
 #pragma once
+
+#if !defined( __cplusplus ) || __cplusplus > 201703L
+#error "A compiler compatible with C++17 or later is required to use the library."
+#endif
+
 #include <tchar.h>
 #include <string>
 #include <vector>
