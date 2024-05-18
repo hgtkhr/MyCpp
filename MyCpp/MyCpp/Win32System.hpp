@@ -288,7 +288,7 @@ namespace MyCpp
 		>
 		inline void SetIniInt( const path_t& file, const string_t& section, const string_t& name, Int value )
 		{
-			SetIniString( file, section, name, strprintf( _T( "%I64u" ), static_cast< uint64_t >( value ) ) );
+			SetIniString( file, section, name, strprintf( _T( "%I64u" ), static_cast< std::uint64_t >( value ) ) );
 		}
 
 		// signed
@@ -299,7 +299,7 @@ namespace MyCpp
 		>
 		inline void SetIniInt( const path_t& file, const string_t& section, const string_t& name, Int value )
 		{
-			SetIniString( file, section, name, strprintf( _T( "%I64" ), static_cast< uint64_t >( value ) ) );
+			SetIniString( file, section, name, strprintf( _T( "%I64" ), static_cast< std::int64_t >( value ) ) );
 		}
 
 		// qword - 64bit unsigned
