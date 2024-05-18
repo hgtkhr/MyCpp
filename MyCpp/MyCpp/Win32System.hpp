@@ -1,6 +1,7 @@
 #pragma once
 #include <cstring>
 #include <filesystem>
+#include "MyCpp/StringUtils.hpp"
 #include "MyCpp/Win32SafeHandle.hpp"
 
 namespace MyCpp
@@ -24,7 +25,7 @@ namespace MyCpp
 
 	inline string_t to_string_t( const path_t& p )
 	{
-		return Details::p2s_policy< std::is_same< string_t, path_t::string_type >::value >::string( p );
+		return Details::p2s_policy< std::is_same_v< string_t, path_t::string_type > >::string( p );
 	}
 
 	typedef std::shared_ptr< CRITICAL_SECTION > SPCRITICAL_SECTION;
@@ -114,27 +115,46 @@ namespace MyCpp
 
 	string_t GetRegString( HKEY parentKey, const string_t& subKey, const string_t& valueName );
 	uint32_t GetRegBinary( HKEY parentKey, const string_t& subKey, const string_t& valueName, void* ptr, std::uint32_t size );
+	dword GetRegDword( HKEY parentKey, const string_t& subKey, const string_t& valueName );
+	qword GetRegQword( HKEY parentKey, const string_t& subKey, const string_t& valueName );
 	void SetRegString( HKEY parentKey, const string_t& subKey, const string_t& valueName, const string_t& value );
 	void SetRegBinary( HKEY parentKey, const string_t& subKey, const string_t& valueName, uint32_t type, const void* ptr, std::uint32_t size );
 
-	template < typename XWORD >
-	inline XWORD GetRegXword( HKEY parentKey, const string_t& subKey, const string_t& valueName )
+	namespace Details
 	{
-		XWORD result;
+		// qword - 64bit unsigned
+		template < typename Xword >
+		inline
+		std::enable_if_t< std::is_same_v< Xword, qword >, Xword >
+		GetRegXword( HKEY parentKey, const string_t& subKey, const string_t& valueName )
+		{
+			return GetRegDword( HKEY parentKey, const string_t & subKey, const string_t & valueName );
+		}
 
-		GetRegBinary( parentKey, subKey, valueName, &result, sizeof( XWORD ) );
-
-		return result;
+		// dword - 32bit unsigned
+		template < typename Xword >
+		inline
+		std::enable_if_t< std::is_same_v< Xword, dword >, Xword >
+		GetRegXword( HKEY parentKey, const string_t& subKey, const string_t& valueName )
+		{
+			return GetRegQword( HKEY parentKey, const string_t & subKey, const string_t & valueName );
+		}
 	}
 
-	inline void SetRegDword( HKEY parentKey, const string_t& subKey, const string_t& valueName, std::uint32_t value )
+	template < typename Xword >
+	inline Xword GetRegXword( HKEY parentKey, const string_t& subKey, const string_t& valueName )
 	{
-		SetRegBinary( parentKey, subKey, valueName, REG_DWORD, &value, sizeof( std::uint32_t ) );
+		return Details::GetRegXword< Xword >( parentKey, subKey, valueName );
 	}
 
-	inline void SetRegQword( HKEY parentKey, const string_t& subKey, const string_t& valueName, std::uint64_t value )
+	inline void SetRegXword( HKEY parentKey, const string_t& subKey, const string_t& valueName, dword value )
 	{
-		SetRegBinary( parentKey, subKey, valueName, REG_QWORD, &value, sizeof( std::uint64_t ) );
+		SetRegBinary( parentKey, subKey, valueName, REG_DWORD, &value, sizeof( dword ) );
+	}
+
+	inline void SetRegXword( HKEY parentKey, const string_t& subKey, const string_t& valueName, qword value )
+	{
+		SetRegBinary( parentKey, subKey, valueName, REG_QWORD, &value, sizeof( qword ) );
 	}
 
 	path_t GetProgramModuleFileName( HMODULE hmodule = null );
@@ -197,25 +217,45 @@ namespace MyCpp
 	namespace Details
 	{
 		// unsigned
-		template 
-		<
-			typename Int,
-			std::enable_if_t< std::is_unsigned_v< Int >, bool > = true
-		>
-		inline Int GetIniInt( const path_t& file, const string_t& section, const string_t& name )
+		template < typename Int>
+		inline 
+		std::enable_if_t< std::is_unsigned_v< Int >, Int >
+		GetIniInt( const path_t& file, const string_t& section, const string_t& name )
 		{
 			return static_cast< Int >( std::stoull( GetIniString( file, section, name ), null, 10 ) );
 		}
 
 		// signed
-		template 
-		<
-			typename Int,
-			std::enable_if_t< !std::is_unsigned_v< Int >, bool > = true
-		>
-		inline Int GetIniInt( const path_t& file, const string_t& section, const string_t& name )
+		template < typename Int >
+		inline 
+		std::enable_if_t< !std::is_unsigned_v< Int >, Int >
+		GetIniInt( const path_t& file, const string_t& section, const string_t& name )
 		{
 			return static_cast< Int >( std::stoll( GetIniString( file, section, name ), null, 10 ) );
+		}
+
+		// qword - 64bit unsigned
+		template < typename Xword >
+		inline
+		std::enable_if_t < std::is_same_v< Xword, qword >, Xword >
+		GetIniXword( const path_t& file, const string_t& section, const string_t& name )
+		{
+			return static_cast< qword >( std::stoull( GetIniString( file, section, name ), null, 16 ) );
+		}
+
+		// dword - 32bit unsigned
+		template < typename Xword >
+		inline 
+		std::enable_if_t< std::is_same_v< Xword, dword >, Xword >
+		GetIniXword( const path_t& file, const string_t& section, const string_t& name )
+		{
+			return static_cast< dword >( std::stoul( GetIniString( file, section, name ), null, 16 ) );
+		}
+
+		// double - floating point
+		inline double GetIniDouble( const path_t& file, const string_t& section, const string_t& name )
+		{
+			return std::stod( GetIniString( file, section, name ) );
 		}
 
 		// Primitive Data Type 
@@ -262,6 +302,18 @@ namespace MyCpp
 			SetIniString( file, section, name, strprintf( _T( "%I64" ), static_cast< uint64_t >( value ) ) );
 		}
 
+		// qword - 64bit unsigned
+		inline void SetIniXword( const path_t& file, const string_t& section, const string_t& name, qword value )
+		{
+			SetIniString( file, section, name, strprintf( _T( "0x%016llX" ), value ) );
+		}
+
+		// dword - 32bit unsigned
+		inline void SetIniXword( const path_t& file, const string_t& section, const string_t& name, dword value )
+		{
+			SetIniString( file, section, name, strprintf( _T( "0x%08lX" ), value ) );
+		}
+
 		// Primitive Data Type 
 		template
 		<
@@ -291,10 +343,16 @@ namespace MyCpp
 		return Details::GetIniInt< Int >( file, section, name );
 	}
 
-	template < typename Int >
-	inline void SetIniInt( const path_t& file, const string_t& section, const string_t& name, Int value )
+	template < typename Xword >
+	inline Xword GetXword( const path_t& file, const string_t& section, const string_t& name )
 	{
-		Details::SetIniInt( file, section, name, value );
+		return Details::GetIniXword< Xword >( file, section, name );
+	}
+
+	template < typename FloatType >
+	inline FloatType GetIniFloat( const path_t& file, const string_t& section, const string_t& name )
+	{
+		return static_cast< FloatType >( Details::GetIniDouble( file, section, name ) );
 	}
 
 	template < typename DataType >
@@ -303,12 +361,29 @@ namespace MyCpp
 		return Details::GetIniData( file, section, name, data );
 	}
 
+	template < typename Int >
+	inline void SetIniInt( const path_t& file, const string_t& section, const string_t& name, Int value )
+	{
+		Details::SetIniInt( file, section, name, value );
+	}
+
+	template < typename FloatType >
+	inline void SetIniFloat( const path_t& file, const string_t& section, const string_t& name, FloatType value )
+	{
+		SetIniString( file, section, name, strprintf( _T( "%lf" ), static_cast< double >( value ) ) );
+	}
+
 	template < typename DataType >
 	inline void SetIniData( const path_t& file, const string_t& section, const string_t& name, const DataType& data )
 	{
 		Details::SetIniData( file, section, name, data );
 	}
 
+	template < typename Xword >
+	inline void SetIniXword( const path_t& file, const string_t& section, const string_t& name, Xword value )
+	{
+		Details::SetIniXword( file, section, name, value );
+	}
 }
 
 #if defined( MYCPP_GLOBALTYPEDES )

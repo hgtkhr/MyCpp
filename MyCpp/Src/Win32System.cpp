@@ -2,7 +2,6 @@
 #include "MyCpp/Win32SafeHandle.hpp"
 #include "MyCpp/Win32Memory.hpp"
 #include "MyCpp/Error.hpp"
-#include "MyCpp/StringUtils.hpp"
 #include "MyCpp/IntCast.hpp"
 
 #include <Objbase.h>
@@ -861,6 +860,45 @@ namespace MyCpp
 		}
 
 		return 0;
+	}
+
+	namespace
+	{
+		template < typename XWORD, DWORD REGTYPE >
+		inline XWORD GetRegXword( HKEY parentKey, const string_t& subKey, const string_t& valueName )
+		{
+			HKEY hk;
+
+			LSTATUS r = ::RegOpenKeyEx( parentKey, subKey.c_str(), 0, KEY_READ, &hk );
+			if ( r == ERROR_SUCCESS )
+			{
+				XWORD result;
+
+				DWORD size = sizeof( XWORD );
+				DWORD dataType = REGTYPE;
+
+				ScopedRegHandle regHandle( hk );
+
+				r = ::RegQueryValueEx( hk, valueName.c_str(), null, &dataType, reinterpret_cast< BYTE* >( &result ), &size );
+				if ( r == ERROR_SUCCESS && dataType == REGTYPE && size == sizeof( XWORD ) )
+					return result;
+			}
+
+			exception< std::runtime_error >( REGVALUE_ERROR( "GetRegXword", subKey, valueName, r ) );
+
+			return null;
+		}
+
+	}
+
+	dword GetRegDword( HKEY parentKey, const string_t& subKey, const string_t& valueName )
+	{
+		return GetRegXword< dword, REG_DWORD >( parentKey, subKey, valueName );
+	}
+
+	qword GetRegQword( HKEY parentKey, const string_t& subKey, const string_t& valueName )
+	{
+		return GetRegXword< qword, REG_QWORD >( parentKey, subKey, valueName );
 	}
 
 	string_t GetRegString( HKEY parentKey, const string_t& subKey, const string_t& valueName )
