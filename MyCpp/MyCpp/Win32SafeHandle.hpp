@@ -51,24 +51,24 @@ namespace MyCpp
 	};
 
 	template < typename HandleType, typename Deleter = SafeHandleCloser< HandleType > >
-	using ScopedHandle = std::unique_ptr< typename std::remove_pointer< HandleType >::type, Deleter >;
+	using scoped_handle_t = std::unique_ptr< typename std::remove_pointer< HandleType >::type, Deleter >;
 
 	template < typename HandleType >
-	using SharedHandle = std::shared_ptr< typename std::remove_pointer< HandleType >::type >;
+	using shared_handle_t = std::shared_ptr< typename std::remove_pointer< HandleType >::type >;
 
-	typedef ScopedHandle< HANDLE > ScopedGenericHandle;
-	typedef ScopedHandle< HKEY > ScopedRegHandle;
-	typedef ScopedHandle< SC_HANDLE > ScopedSvcHandle;
+	typedef scoped_handle_t< HANDLE >		scoped_generic_handle;
+	typedef scoped_handle_t< HKEY >			scoped_reg_handle;
+	typedef scoped_handle_t< SC_HANDLE >	scoped_svc_handle;
 
 	template < typename HandleType >
-	inline SharedHandle< HandleType > MakeSharedHandle( HandleType handle )
+	inline shared_handle_t< HandleType > make_shared_handle( HandleType handle )
 	{
 		return { handle, SafeHandleCloser< HandleType >() };
 	}
 }
 
 #if defined( MYCPP_GLOBALTYPEDES )
-using MyCpp::ScopedGenericHandle;
-using MyCpp::ScopedRegHandle;
-using MyCpp::ScopedSvcHandle;
+using MyCpp::scoped_generic_handle;
+using MyCpp::scoped_reg_handle;
+using MyCpp::scoped_svc_handle;
 #endif

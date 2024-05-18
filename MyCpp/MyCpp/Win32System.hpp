@@ -28,11 +28,11 @@ namespace MyCpp
 		return Details::p2s_policy< std::is_same_v< string_t, path_t::string_type > >::string( p );
 	}
 
-	typedef std::shared_ptr< CRITICAL_SECTION > SPCRITICAL_SECTION;
+	typedef std::shared_ptr< CRITICAL_SECTION > csptr_t;
 
-	constexpr std::uint32_t CSSPIN_AUTO = 4000;
+	constexpr uint CSSPIN_AUTO = 4000;
 
-	SPCRITICAL_SECTION CreateCriticalSection( std::uint32_t spinCount = CSSPIN_AUTO );
+	csptr_t CreateCriticalSection( uint spinCount = CSSPIN_AUTO );
 
 	namespace Details
 	{
@@ -62,19 +62,19 @@ namespace MyCpp
 		};
 	}
 
-	typedef ScopedHandle< HANDLE, Details::MutexDeleter > MUTEX;
-	typedef std::unique_ptr< CRITICAL_SECTION, Details::CriticalSectionExit > CRITICAL_SECTION_LOCK;
+	typedef scoped_handle_t< HANDLE, Details::MutexDeleter > mutex_t;
+	typedef std::unique_ptr< CRITICAL_SECTION, Details::CriticalSectionExit > cslock_t;
 
-	std::pair< DWORD, MUTEX > TryLockMutex( const string_t& name, bool waitForGetOwnership );
-	CRITICAL_SECTION_LOCK TryLockCriticalSection( CRITICAL_SECTION& csObj );
+	std::pair< dword, mutex_t > TryLockMutex( const string_t& name, bool waitForGetOwnership );
+	cslock_t TryLockCriticalSection( CRITICAL_SECTION& csObj );
 
-	inline CRITICAL_SECTION_LOCK TryLockCriticalSection( SPCRITICAL_SECTION& csObj )
+	inline cslock_t TryLockCriticalSection( csptr_t& csObj )
 	{
 		return TryLockCriticalSection( *csObj );
 	}
 
-	template < typename T, DWORD Size = sizeof( T ) >
-	inline DWORD Fill0( T& podStruct )
+	template < typename T, dword Size = sizeof( T ) >
+	inline dword Fill0( T& podStruct )
 	{
 		ZeroMemory( &podStruct, Size );
 
@@ -101,9 +101,9 @@ namespace MyCpp
 		return result;
 	}
 
-	typedef std::shared_ptr< std::remove_pointer< PSID >::type > SPSID;
+	typedef std::shared_ptr< std::remove_pointer< PSID >::type > sidptr_t;
 
-	SPSID GetProcessSid( HANDLE process );
+	sidptr_t GetProcessSid( HANDLE process );
 
 	path_t GetCurrentLocation();
 	path_t GetSpecialFolderLocation( const GUID& folderId );
@@ -114,11 +114,11 @@ namespace MyCpp
 	string_t ToGuidString( const GUID& guid );
 
 	string_t GetRegString( HKEY parentKey, const string_t& subKey, const string_t& valueName );
-	uint32_t GetRegBinary( HKEY parentKey, const string_t& subKey, const string_t& valueName, void* ptr, std::uint32_t size );
+	uint GetRegBinary( HKEY parentKey, const string_t& subKey, const string_t& valueName, void* ptr, uint size );
 	dword GetRegDword( HKEY parentKey, const string_t& subKey, const string_t& valueName );
 	qword GetRegQword( HKEY parentKey, const string_t& subKey, const string_t& valueName );
 	void SetRegString( HKEY parentKey, const string_t& subKey, const string_t& valueName, const string_t& value );
-	void SetRegBinary( HKEY parentKey, const string_t& subKey, const string_t& valueName, uint32_t type, const void* ptr, std::uint32_t size );
+	void SetRegBinary( HKEY parentKey, const string_t& subKey, const string_t& valueName, uint type, const void* ptr, uint size );
 
 	namespace Details
 	{
@@ -174,45 +174,45 @@ namespace MyCpp
 		path_t GetFileName() const;
 		HANDLE GetHandle() const;
 		HANDLE GetPrimaryThreadHandle() const;
-		DWORD GetId() const;
-		DWORD GetPrimaryThreadId() const;
-		DWORD GetExitCode() const;
+		dword GetId() const;
+		dword GetPrimaryThreadId() const;
+		dword GetExitCode() const;
 
 		void Terminate( int exitCode );
 		void Suspend();
 		void Resume();
 
-		DWORD Wait( DWORD milliseconds = INFINITE, bool forInputIdle = false ) const;
+		dword Wait( dword milliseconds = INFINITE, bool forInputIdle = false ) const;
 	private:
 		std::shared_ptr< Data > m_data;
 	};
 
-	typedef std::shared_ptr< Process > SPPROCESS;
+	typedef std::shared_ptr< Process > processptr_t;
 
-	inline SPSID GetProcessSid( const SPPROCESS& process )
+	inline sidptr_t GetProcessSid( const processptr_t& process )
 	{
 		return GetProcessSid( process->GetHandle() );
 	}
 
-	HWND FindProcessWindow( const SPPROCESS& process, const string_t& wndClassName, const string_t& wndName );
+	HWND FindProcessWindow( const processptr_t& process, const string_t& wndClassName, const string_t& wndName );
 
-	SPPROCESS GetProcess( DWORD pid );
-	SPPROCESS GetProcess( HANDLE hProcess );
-	SPPROCESS GetParentProcess();
+	processptr_t GetProcess( dword pid );
+	processptr_t GetProcess( HANDLE hProcess );
+	processptr_t GetParentProcess();
 
 	const Process* GetCurrentProcess();
 
-	SPPROCESS OpenProcessByFileName( const path_t& fileName, bool inheritHandle = false, DWORD accessMode = 0 );
-	SPPROCESS OpenCuProcessByFileName( const path_t& fileName, bool inheritHandle = false, DWORD accessMode = 0 );
+	processptr_t OpenProcessByFileName( const path_t& fileName, bool inheritHandle = false, dword accessMode = 0 );
+	processptr_t OpenCuProcessByFileName( const path_t& fileName, bool inheritHandle = false, dword accessMode = 0 );
 
-	SPPROCESS StartProcess( const string_t& cmdline, const path_t& appCurrentDir = null, void* envVariables = null, int creationFlags = 0, bool inheritHandle = false,  int cmdShow = SW_SHOWDEFAULT );
+	processptr_t StartProcess( const string_t& cmdline, const path_t& appCurrentDir = null, void* envVariables = null, int creationFlags = 0, bool inheritHandle = false,  int cmdShow = SW_SHOWDEFAULT );
 
 	int RunElevated( const path_t& file, const string_t& parameters = null, bool waitForExit = true, int cmdShow = SW_SHOWDEFAULT );
 
 	string_t GetIniString( const path_t& file, const string_t& section, const string_t& name, const string_t& defaultValue = null );
-	bool GetIniBinary( const path_t& file, const string_t& section, const string_t& name, void* ptr, std::uint32_t size );
+	bool GetIniBinary( const path_t& file, const string_t& section, const string_t& name, void* ptr, uint size );
 	void SetIniString( const path_t& file, const string_t& section, const string_t& name, const string_t& value );
-	void SetIniBinary( const path_t& file, const string_t& section, const string_t& name, const void* ptr, std::uint32_t size );
+	void SetIniBinary( const path_t& file, const string_t& section, const string_t& name, const void* ptr, uint size );
 
 	namespace Details
 	{
@@ -388,9 +388,9 @@ namespace MyCpp
 
 #if defined( MYCPP_GLOBALTYPEDES )
 using MyCpp::path_t;
-using MyCpp::MUTEX;
-using MyCpp::SPCRITICAL_SECTION;
-using MyCpp::CRITICAL_SECTION_LOCK;
-using MyCpp::SPPROCESS;
-using MyCpp::SPSID;
+using MyCpp::mutex_t;
+using MyCpp::csptr_t;
+using MyCpp::cslock_t;
+using MyCpp::processptr_t;
+using MyCpp::sidptr_t;
 #endif

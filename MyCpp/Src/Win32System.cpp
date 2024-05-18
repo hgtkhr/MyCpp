@@ -24,7 +24,7 @@
 
 namespace MyCpp
 {
-	constexpr DWORD PROCESS_GET_INFO = PROCESS_QUERY_INFORMATION | PROCESS_VM_READ;
+	constexpr dword PROCESS_GET_INFO = PROCESS_QUERY_INFORMATION | PROCESS_VM_READ;
 
 	path_t GetProgramModuleFileName( HMODULE hmodule )
 	{
@@ -33,7 +33,7 @@ namespace MyCpp
 		adaptive_load( buffer, buffer.size(),
 			[&] ( LPTSTR buffer, std::size_t n )
 		{
-			return ::GetModuleFileName( hmodule, buffer, numeric_cast< DWORD >( n ) );
+			return ::GetModuleFileName( hmodule, buffer, numeric_cast< dword >( n ) );
 		} );
 
 		return cstr_t( buffer );
@@ -51,7 +51,7 @@ namespace MyCpp
 		adaptive_load( buffer, buffer.size(),
 			[&] ( LPTSTR buffer, std::size_t n )
 		{
-			return ::GetTempPath( numeric_cast< DWORD >( n ), buffer );
+			return ::GetTempPath( numeric_cast< dword >( n ), buffer );
 		} );
 
 		return cstr_t( buffer );
@@ -82,25 +82,25 @@ namespace MyCpp
 		return narrow_wide_string< string_t, std::wstring >( cstr_t( guidStr ) );
 	}
 
-	SPSID GetProcessSid( HANDLE process )
+	sidptr_t GetProcessSid( HANDLE process )
 	{
-		typedef SPSID::element_type SID;
+		typedef typename sidptr_t::element_type SID;
 
 		HANDLE token = null;
 
 		if ( ::OpenProcessToken( process, TOKEN_QUERY, &token ) )
 		{
-			DWORD bytes;
-			ScopedGenericHandle processToken( token );
+			dword bytes;
+			scoped_generic_handle processToken( token );
 			::GetTokenInformation( processToken.get(), TokenUser, null, 0, &bytes );
 
-			ScopedLocalMemory< TOKEN_USER > tokenUser( LocalAllocate< TOKEN_USER >( LPTR, bytes ) );
+			scoped_local_memory< TOKEN_USER > tokenUser( local_allocate< TOKEN_USER >( LPTR, bytes ) );
 			if ( ::GetTokenInformation( processToken.get(), TokenUser, tokenUser.get(), bytes, &bytes ) )
 			{
 				if ( ::IsValidSid( tokenUser->User.Sid ) )
 				{
-					DWORD sidLength = ::GetLengthSid( tokenUser->User.Sid );
-					ScopedLocalMemory< SID > sid( LocalAllocate< SID >( LPTR, sidLength ) );
+					dword sidLength = ::GetLengthSid( tokenUser->User.Sid );
+					scoped_local_memory< SID > sid( local_allocate< SID >( LPTR, sidLength ) );
 
 					::CopySid( sidLength, sid.get(), tokenUser->User.Sid );
 
@@ -115,14 +115,14 @@ namespace MyCpp
 		return null;
 	}
 
-	SPPROCESS OpenCuProcessByFileName( const path_t& fileName, bool inheritHandle, DWORD accessMode )
+	processptr_t OpenCuProcessByFileName( const path_t& fileName, bool inheritHandle, dword accessMode )
 	{
-		SPPROCESS process = OpenProcessByFileName( fileName, inheritHandle, accessMode );
+		processptr_t process = OpenProcessByFileName( fileName, inheritHandle, accessMode );
 
 		if ( process )
 		{
-			SPSID current( GetProcessSid( ::GetCurrentProcess() ) );
-			SPSID target( GetProcessSid( process->GetHandle() ) );
+			sidptr_t current( GetProcessSid( ::GetCurrentProcess() ) );
+			sidptr_t target( GetProcessSid( process->GetHandle() ) );
 
 			if ( ::EqualSid( current.get(), target.get() ) )
 				return process;
@@ -131,19 +131,19 @@ namespace MyCpp
 		return null;
 	}
 
-	SPPROCESS OpenProcessByFileName( const path_t& fileName, bool inheritHandle, DWORD accessMode )
+	processptr_t OpenProcessByFileName( const path_t& fileName, bool inheritHandle, dword accessMode )
 	{
-		DWORD maxIndex = 0;
-		std::vector< DWORD > pids( 400 );
+		dword maxIndex = 0;
+		std::vector< dword > pids( 400 );
 
 		adaptive_load( pids, pids.size(),
-			[&] ( DWORD* pn, std::size_t n )
+			[&] ( dword* pn, std::size_t n )
 		{
-			DWORD size;
+			dword size;
 
-			::EnumProcesses( pn, numeric_cast< DWORD >( n * sizeof( DWORD ) ), &size );
+			::EnumProcesses( pn, numeric_cast< dword >( n * sizeof( dword ) ), &size );
 
-			size /= sizeof( DWORD );
+			size /= sizeof( dword );
 
 			if ( size < n )
 				maxIndex = size;
@@ -154,16 +154,16 @@ namespace MyCpp
 		vchar_t exeFileName( MAX_PATH );
 		string_t searchExeName = to_string_t( fileName );
 
-		for ( DWORD i = 0; i < maxIndex; ++i )
+		for ( dword i = 0; i < maxIndex; ++i )
 		{
 			if ( HANDLE p = ::OpenProcess( accessMode | PROCESS_GET_INFO, ( inheritHandle ) ? TRUE : FALSE, pids[i] ) )
 			{
-				ScopedGenericHandle process( p );
+				scoped_generic_handle process( p );
 
 				adaptive_load( exeFileName, exeFileName.size(),
 					[&] ( char_t* s, std::size_t n )
 				{
-					DWORD size = numeric_cast< DWORD >( n );
+					dword size = numeric_cast< dword >( n );
 					if ( ::QueryFullProcessImageName( process.get(), 0, s, &size ) )
 						return size + 1;
 
@@ -180,7 +180,7 @@ namespace MyCpp
 
 	namespace
 	{
-		void ComInitialize()
+		void CoInitialize()
 		{
 			thread_local
 			struct CoInitializer
@@ -197,7 +197,7 @@ namespace MyCpp
 			private:
 				HRESULT m_result;
 			}
-			comInitializer;
+			CoThreadInitState;
 		}
 
 		template < typename T >
@@ -214,12 +214,12 @@ namespace MyCpp
 
 	path_t GetSpecialFolderLocation( const GUID& folderId )
 	{
-		ComInitialize();
+		CoInitialize();
 
-		LPWSTR pstr;
-		HRESULT r = ::SHGetKnownFolderPath( folderId, 0, null, &pstr );
+		LPWSTR psz;
+		HRESULT r = ::SHGetKnownFolderPath( folderId, 0, null, &psz );
 
-		ScopedMemory< wchar_t, CoMemoryDeleter< wchar_t > > str( pstr );
+		scoped_memory< wchar_t, CoMemoryDeleter< wchar_t > > str( psz );
 
 		if ( FAILED( r ) )
 			exception< std::runtime_error >( FUNC_ERROR_ID( "SHGetKnownFolderPath", r ) );
@@ -234,16 +234,16 @@ namespace MyCpp
 		adaptive_load( result, result.size(),
 			[] ( LPTSTR buffer, std::size_t n )
 		{
-			return ::GetCurrentDirectory( numeric_cast< DWORD >( n ), buffer );
+			return ::GetCurrentDirectory( numeric_cast< dword >( n ), buffer );
 		} );
 
 		return cstr_t( result );
 	}
 
-	std::pair< DWORD, MUTEX > TryLockMutex( const string_t& name, bool waitForGetOwnership )
+	std::pair< dword, mutex_t > TryLockMutex( const string_t& name, bool waitForGetOwnership )
 	{
-		MUTEX mutex( ::CreateMutex( null, TRUE, name.c_str() ) );
-		DWORD lastError = ::GetLastError();
+		mutex_t mutex( ::CreateMutex( null, TRUE, name.c_str() ) );
+		dword lastError = ::GetLastError();
 
 		if ( mutex 
 			&& lastError == ERROR_ALREADY_EXISTS 
@@ -273,11 +273,11 @@ namespace MyCpp
 		};
 	}
 
-	CRITICAL_SECTION_LOCK TryLockCriticalSection( CRITICAL_SECTION& csObj )
+	cslock_t TryLockCriticalSection( CRITICAL_SECTION& csObj )
 	{
 		::EnterCriticalSection( &csObj );
 
-		CRITICAL_SECTION_LOCK lock( &csObj );
+		cslock_t lock( &csObj );
 
 		return std::move( lock );
 	}
@@ -287,19 +287,19 @@ namespace MyCpp
 		template < bool IsDebug = true >
 		struct CSFLAGS
 		{
-			static constexpr DWORD value = 0;
+			static constexpr dword value = 0;
 		};
 
 		template <>
 		struct CSFLAGS<false>
 		{
-			static constexpr DWORD value = CRITICAL_SECTION_NO_DEBUG_INFO;
+			static constexpr dword value = CRITICAL_SECTION_NO_DEBUG_INFO;
 		};
 	}
 
-	SPCRITICAL_SECTION CreateCriticalSection( std::uint32_t spinCount )
+	csptr_t CreateCriticalSection( uint spinCount )
 	{
-		LPCRITICAL_SECTION newCriticalSection = LocalAllocate< CRITICAL_SECTION >( LPTR, sizeof( CRITICAL_SECTION ) );
+		LPCRITICAL_SECTION newCriticalSection = local_allocate< CRITICAL_SECTION >( LPTR, sizeof( CRITICAL_SECTION ) );
 
 		::InitializeCriticalSectionEx( newCriticalSection, spinCount, CSFLAGS< ( MYCPP_DEBUG == 1 ) >::value );
 
@@ -309,10 +309,10 @@ namespace MyCpp
 	class Process::Data
 	{
 	public:
-		typedef std::pair< HANDLE, DWORD > HANDLEID;
+		typedef std::pair< HANDLE, dword > HANDLEID;
 
 		Data();
-		Data( Data&& right );
+		Data( Data&& right ) noexcept;
 		Data( const PROCESS_INFORMATION& info );
 
 		~Data();
@@ -330,9 +330,9 @@ namespace MyCpp
 
 	namespace
 	{
-		Process::Data::HANDLEID GetPrimaryThreadHandleId( DWORD processId )
+		Process::Data::HANDLEID GetPrimaryThreadHandleId( dword processId )
 		{
-			ScopedGenericHandle snapshot( ::CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, processId ) );
+			scoped_generic_handle snapshot( ::CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, processId ) );
 
 			if ( snapshot )
 			{
@@ -354,7 +354,7 @@ namespace MyCpp
 	inline Process::Data::Data()
 	{}
 
-	inline Process::Data::Data( Data&& right )
+	inline Process::Data::Data( Data&& right ) noexcept
 	{
 		m_process.swap( right.m_process );
 		m_priThread.swap( right.m_priThread );
@@ -400,7 +400,7 @@ namespace MyCpp
 			adaptive_load( buffer, buffer.size(),
 				[&] ( char_t* s, std::size_t n )
 			{
-				DWORD size = numeric_cast< DWORD >( n );
+				dword size = numeric_cast< dword >( n );
 				if ( ::QueryFullProcessImageName( m_process.first, 0, s, &size ) )
 					return size + 1;
 
@@ -453,19 +453,19 @@ namespace MyCpp
 		return m_data->GetPrimaryThreadData().first;
 	}
 
-	DWORD Process::GetId() const
+	dword Process::GetId() const
 	{
 		return m_data->GetProcessData().second;
 	}
 
-	DWORD Process::GetPrimaryThreadId() const
+	dword Process::GetPrimaryThreadId() const
 	{
 		return m_data->GetPrimaryThreadData().second;
 	}
 
-	DWORD Process::GetExitCode() const
+	dword Process::GetExitCode() const
 	{
-		DWORD exitCode;
+		dword exitCode;
 
 		::GetExitCodeProcess( m_data->GetProcessData().first, &exitCode );
 
@@ -479,9 +479,9 @@ namespace MyCpp
 
 	namespace
 	{
-		void SuspendProcess( DWORD processId, bool suspend )
+		void SuspendProcess( dword processId, bool suspend )
 		{
-			ScopedGenericHandle snapshot( ::CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, processId ) );
+			scoped_generic_handle snapshot( ::CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, processId ) );
 
 			if ( snapshot )
 			{
@@ -492,7 +492,7 @@ namespace MyCpp
 				{
 					do
 					{
-						ScopedGenericHandle thread( ::OpenThread( THREAD_SUSPEND_RESUME, FALSE, thinfo.th32ThreadID ) );
+						scoped_generic_handle thread( ::OpenThread( THREAD_SUSPEND_RESUME, FALSE, thinfo.th32ThreadID ) );
 						if ( thread )
 						{
 							if ( suspend )
@@ -517,7 +517,7 @@ namespace MyCpp
 		SuspendProcess( m_data->GetProcessData().second, false );
 	}
 
-	DWORD Process::Wait( DWORD milliseconds, bool forInputIdle ) const
+	dword Process::Wait( dword milliseconds, bool forInputIdle ) const
 	{
 		if ( forInputIdle )
 			return ::WaitForInputIdle( m_data->GetProcessData().first, milliseconds );
@@ -525,18 +525,18 @@ namespace MyCpp
 			return ::WaitForSingleObject( m_data->GetProcessData().first, milliseconds );
 	}
 
-	SPPROCESS GetProcess( DWORD pid )
+	processptr_t GetProcess( dword pid )
 	{
-		std::vector< DWORD > pids( 200 );
+		std::vector< dword > pids( 200 );
 
 		adaptive_load( pids, pids.size(),
-			[&] ( DWORD* pn, std::size_t n )
+			[&] ( dword* pn, std::size_t n )
 		{
-			DWORD size;
+			dword size;
 
-			::EnumProcesses( pn, numeric_cast< DWORD >( n * sizeof( DWORD ) ), &size );
+			::EnumProcesses( pn, numeric_cast< dword >( n * sizeof( dword ) ), &size );
 
-			size /= sizeof( DWORD );
+			size /= sizeof( dword );
 
 			return size;
 		} );
@@ -552,19 +552,19 @@ namespace MyCpp
 			std::move( Process::Data( { openedProcess, null, pid, 0 } ) ) );
 	}
 
-	SPPROCESS GetProcess( HANDLE hProcess )
+	processptr_t GetProcess( HANDLE hProcess )
 	{
 		return std::make_shared< Process >( 
 			std::move( Process::Data( { hProcess, null, ::GetProcessId( hProcess ), 0 } ) ) );
 	}
 
-	SPPROCESS GetParentProcess()
+	processptr_t GetParentProcess()
 	{
-		ScopedGenericHandle snapshot( ::CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 ) );
+		scoped_generic_handle snapshot( ::CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 ) );
 
 		if ( snapshot )
 		{
-			DWORD currentProcessId = ::GetCurrentProcessId();
+			dword currentProcessId = ::GetCurrentProcessId();
 
 			PROCESSENTRY32 processEntry;
 			processEntry.dwSize = Fill0( processEntry );
@@ -606,7 +606,7 @@ namespace MyCpp
 
 			adaptive_load( szSearchPath, szSearchPath.size(), [&pstr] (LPTSTR s, std::size_t n)
 			{
-				return ::SearchPath( null, pstr.c_str(), null, numeric_cast< DWORD >( n ), s, null );
+				return ::SearchPath( null, pstr.c_str(), null, numeric_cast< dword >( n ), s, null );
 			} );
 
 			if ( _tcslen( cstr_t( szSearchPath ) ) == 0 )
@@ -622,13 +622,13 @@ namespace MyCpp
 
 		adaptive_load( szSearchPath, szSearchPath.size(), [&filename, &ext] ( LPTSTR s, std::size_t n )
 		{
-			return ::SearchPath( null, filename.c_str(), ( !ext.empty() ) ? ext.c_str() : null, numeric_cast< DWORD >( n ), s, null );
+			return ::SearchPath( null, filename.c_str(), ( !ext.empty() ) ? ext.c_str() : null, numeric_cast< dword >( n ), s, null );
 		} );
 
 		return szSearchPath.data();
 	}
 
-	SPPROCESS StartProcess( const string_t& cmdline, const path_t& appCurrentDir, void* envVariables, int creationFlags, bool inheritHandle,  int cmdShow )
+	processptr_t StartProcess( const string_t& cmdline, const path_t& appCurrentDir, void* envVariables, int creationFlags, bool inheritHandle,  int cmdShow )
 	{
 		bool inQuote = false;
 		bool isQuotedName = false;
@@ -732,7 +732,7 @@ namespace MyCpp
 		{
 			::WaitForSingleObject( shei.hProcess, INFINITE );
 
-			DWORD dwExitCode;
+			dword dwExitCode;
 			::GetExitCodeProcess( shei.hProcess, &dwExitCode );
 
 			::CloseHandle( shei.hProcess );
@@ -750,7 +750,7 @@ namespace MyCpp
 		struct FINDWINDOWINFO
 		{
 			HWND hwnd;
-			DWORD pid;
+			dword pid;
 			LPCTSTR className;
 			LPCTSTR windowName;
 			vchar_t* pWorkBuffer;
@@ -789,7 +789,7 @@ namespace MyCpp
 				GetWindowName( hwnd, buffer );
 				if ( ::_tcsicmp( cstr_t( buffer ), p->windowName ) == 0 )
 				{
-					DWORD pid;
+					dword pid;
 					::GetWindowThreadProcessId( hwnd, &pid );
 					if ( pid == p->pid )
 					{
@@ -803,7 +803,7 @@ namespace MyCpp
 		}
 	}
 
-	HWND FindProcessWindow( const SPPROCESS& process, const string_t& wndClassName, const string_t& wndName )
+	HWND FindProcessWindow( const processptr_t& process, const string_t& wndClassName, const string_t& wndName )
 	{
 		if ( !process )
 			return null;
@@ -824,32 +824,32 @@ namespace MyCpp
 		return &currentProcess;
 	}
 
-	std::uint32_t GetRegBinary( HKEY parentKey, const string_t& subKey, const string_t& valueName, void* ptr, std::uint32_t size )
+	uint GetRegBinary( HKEY parentKey, const string_t& subKey, const string_t& valueName, void* ptr, uint size )
 	{
 		HKEY hk;
 
 		LSTATUS r = ::RegOpenKeyEx( parentKey, subKey.c_str(), 0, KEY_READ, &hk );
 		if ( r == ERROR_SUCCESS )
 		{
-			DWORD returnedSize;
-			ScopedRegHandle regHandle( hk );
+			dword returnedSize;
+			scoped_reg_handle regHandle( hk );
 
 			r = ::RegQueryValueEx( hk, valueName.c_str(), null, null, null, &returnedSize );
 			if ( r == ERROR_SUCCESS  )
 			{
-				ScopedLocalMemory< BYTE > buffer;
-				BYTE* p = reinterpret_cast< BYTE* >( ptr );
+				scoped_local_memory< byte > buffer;
+				byte* p = reinterpret_cast< byte* >( ptr );
 				
 				if ( returnedSize > size )
 				{
-					buffer.reset( LocalAllocate< BYTE >( LPTR, returnedSize ) );
+					buffer.reset( local_allocate< byte >( LPTR, returnedSize ) );
 					p = buffer.get();
 				}
 
 				r = ::RegQueryValueEx( hk, valueName.c_str(), null, null, p, &returnedSize );
 				if ( r == ERROR_SUCCESS )
 				{
-					std::uint32_t n = std::min( static_cast< DWORD >( size ), returnedSize );
+					uint n = std::min( static_cast< dword >( size ), returnedSize );
 
 					if ( ptr != null && p != ptr )
 						std::memcpy( ptr, p, n );
@@ -864,23 +864,23 @@ namespace MyCpp
 
 	namespace
 	{
-		template < typename XWORD, DWORD REGTYPE >
-		inline XWORD GetRegXword( HKEY parentKey, const string_t& subKey, const string_t& valueName )
+		template < typename Xword, dword REGTYPE >
+		inline Xword GetRegXword( HKEY parentKey, const string_t& subKey, const string_t& valueName )
 		{
 			HKEY hk;
 
 			LSTATUS r = ::RegOpenKeyEx( parentKey, subKey.c_str(), 0, KEY_READ, &hk );
 			if ( r == ERROR_SUCCESS )
 			{
-				XWORD result;
+				Xword result;
 
-				DWORD size = sizeof( XWORD );
-				DWORD dataType = REGTYPE;
+				dword size = sizeof( Xword );
+				dword dataType = REGTYPE;
 
-				ScopedRegHandle regHandle( hk );
+				scoped_reg_handle regHandle( hk );
 
-				r = ::RegQueryValueEx( hk, valueName.c_str(), null, &dataType, reinterpret_cast< BYTE* >( &result ), &size );
-				if ( r == ERROR_SUCCESS && dataType == REGTYPE && size == sizeof( XWORD ) )
+				r = ::RegQueryValueEx( hk, valueName.c_str(), null, &dataType, reinterpret_cast< byte* >( &result ), &size );
+				if ( r == ERROR_SUCCESS && dataType == REGTYPE && size == sizeof( Xword ) )
 					return result;
 			}
 
@@ -908,14 +908,14 @@ namespace MyCpp
 		LSTATUS r = ::RegOpenKeyEx( parentKey, subKey.c_str(), 0, KEY_READ, &hk );
 		if ( r == ERROR_SUCCESS )
 		{
-			DWORD size;
-			ScopedRegHandle regHandle( hk );
+			dword size;
+			scoped_reg_handle regHandle( hk );
 
 			r = ::RegQueryValueEx( hk, valueName.c_str(), null, null, null, &size );
 			if ( r == ERROR_SUCCESS )
 			{
-				DWORD dataType;
-				std::vector< BYTE > buffer( size );
+				dword dataType;
+				std::vector< byte > buffer( size );
 
 				r = ::RegQueryValueEx( hk, valueName.c_str(), null, &dataType, buffer.data(), &size );
 				if ( r == ERROR_SUCCESS )
@@ -923,10 +923,10 @@ namespace MyCpp
 					switch ( dataType )
 					{
 					case REG_DWORD:
-						return strprintf( _T( "%I32u" ), *reinterpret_cast< DWORD* >( buffer.data() ) );
+						return strprintf( _T( "%I32u" ), *reinterpret_cast< dword* >( buffer.data() ) );
 
 					case REG_QWORD:
-						return strprintf( _T( "%I64u" ), *reinterpret_cast< DWORD64* >( buffer.data() ) );
+						return strprintf( _T( "%I64u" ), *reinterpret_cast< qword* >( buffer.data() ) );
 
 					case REG_SZ:
 					case REG_EXPAND_SZ:
@@ -949,14 +949,14 @@ namespace MyCpp
 	void SetRegString( HKEY parentKey, const string_t& subKey, const string_t& valueName, const string_t& value )
 	{
 		HKEY hk;
-		DWORD disposition;
+		dword disposition;
 
 		LSTATUS r = ::RegCreateKeyEx( parentKey, subKey.c_str(), 0, null, REG_OPTION_NON_VOLATILE, KEY_WRITE, null, &hk, &disposition );
 		if ( r == ERROR_SUCCESS )
 		{
-			ScopedRegHandle regHandle( hk );
+			scoped_reg_handle regHandle( hk );
 
-			r = ::RegSetValueEx( hk, valueName.c_str(), 0, REG_SZ, reinterpret_cast< const BYTE* >( value.c_str() ), numeric_cast< DWORD >( value.length() ) );
+			r = ::RegSetValueEx( hk, valueName.c_str(), 0, REG_SZ, reinterpret_cast< const byte* >( value.c_str() ), numeric_cast< dword >( value.length() ) );
 			if ( r == ERROR_SUCCESS )
 				return ;
 		}
@@ -964,17 +964,17 @@ namespace MyCpp
 		exception< std::runtime_error >( REGVALUE_ERROR( "SetRegString", subKey, valueName, r ) );
 	}
 
-	void SetRegBinary( HKEY parentKey, const string_t& subKey, const string_t& valueName, uint32_t type, const void* ptr, uint32_t size )
+	void SetRegBinary( HKEY parentKey, const string_t& subKey, const string_t& valueName, uint type, const void* ptr, uint size )
 	{
 		HKEY hk;
-		DWORD disposition;
+		dword disposition;
 
 		LSTATUS r = ::RegCreateKeyEx( parentKey, subKey.c_str(), 0, null, REG_OPTION_NON_VOLATILE, KEY_WRITE, null, &hk, &disposition );
 		if ( r == ERROR_SUCCESS )
 		{
-			ScopedRegHandle regHandle( hk );
+			scoped_reg_handle regHandle( hk );
 
-			r = ::RegSetValueEx( hk, valueName.c_str(), 0, type, reinterpret_cast< const BYTE* >( ptr ), size );
+			r = ::RegSetValueEx( hk, valueName.c_str(), 0, type, reinterpret_cast< const byte* >( ptr ), size );
 			if ( r == ERROR_SUCCESS )
 				return;
 		}
@@ -989,11 +989,11 @@ namespace MyCpp
 		adaptive_load( buffer, buffer.size(),
 			[&] ( LPTSTR s, std::size_t n ) 
 		{
-			DWORD r = ::GetPrivateProfileString( section.c_str()
+			dword r = ::GetPrivateProfileString( section.c_str()
 												 , name.c_str()
 												 , defaultValue.c_str()
 												 , s
-												 , numeric_cast< DWORD >( n )
+												 , numeric_cast< dword >( n )
 												 , to_string_t( file ).c_str() );
 			return ( r == n - 1 ) ? r + 1 : r;
 		} );
@@ -1001,7 +1001,7 @@ namespace MyCpp
 		return cstr_t( buffer );
 	}
 
-	bool GetIniBinary( const path_t& file, const string_t& section, const string_t& name, void* ptr, std::uint32_t size )
+	bool GetIniBinary( const path_t& file, const string_t& section, const string_t& name, void* ptr, uint size )
 	{
 		return ( ::GetPrivateProfileStruct( section.c_str(), name.c_str(), ptr, size, to_string_t( file ).c_str() ) != FALSE );
 	}
@@ -1014,7 +1014,7 @@ namespace MyCpp
 		::WritePrivateProfileString( section.c_str(), pszName, pszValue, to_string_t( file ).c_str() );
 	}
 
-	void SetIniBinary( const path_t& file, const string_t& section, const string_t& name, const void* ptr, std::uint32_t size )
+	void SetIniBinary( const path_t& file, const string_t& section, const string_t& name, const void* ptr, uint size )
 	{
 		LPCTSTR pszName = ( !name.empty() ) ? name.c_str() : null;
 
