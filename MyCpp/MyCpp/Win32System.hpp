@@ -8,24 +8,12 @@ namespace MyCpp
 {
 	typedef std::filesystem::path path_t;
 
-	namespace Details
-	{
-		template < bool IsNativeString = true >
-		struct p2s_policy
-		{
-			static const string_t& string( const path_t& p ) { return p.native(); }
-		};
-
-		template <>
-		struct p2s_policy< false >
-		{
-			static string_t string( const path_t& p ) { return p.string< char_t >(); }
-		};
-	}
-
 	inline string_t to_string_t( const path_t& p )
 	{
-		return Details::p2s_policy< std::is_same_v< string_t, path_t::string_type > >::string( p );
+		if constexpr ( std::is_same_v< string_t, path_t::string_type > )
+			return p.native();
+		else
+			return p.string< char_t >();
 	}
 
 	typedef std::shared_ptr< CRITICAL_SECTION > csptr_t;

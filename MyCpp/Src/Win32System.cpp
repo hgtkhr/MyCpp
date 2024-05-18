@@ -282,26 +282,14 @@ namespace MyCpp
 		return std::move( lock );
 	}
 
-	namespace
-	{
-		template < bool IsDebug = true >
-		struct CSFLAGS
-		{
-			static constexpr dword value = 0;
-		};
-
-		template <>
-		struct CSFLAGS<false>
-		{
-			static constexpr dword value = CRITICAL_SECTION_NO_DEBUG_INFO;
-		};
-	}
-
 	csptr_t CreateCriticalSection( uint spinCount )
 	{
 		LPCRITICAL_SECTION newCriticalSection = local_allocate< CRITICAL_SECTION >( LPTR, sizeof( CRITICAL_SECTION ) );
 
-		::InitializeCriticalSectionEx( newCriticalSection, spinCount, CSFLAGS< ( MYCPP_DEBUG == 1 ) >::value );
+		if constexpr ( MYCPP_DEBUG == 1 )
+			::InitializeCriticalSectionEx( newCriticalSection, spinCount, 0 );
+		else
+			::InitializeCriticalSectionEx( newCriticalSection, spinCount, CRITICAL_SECTION_NO_DEBUG_INFO );
 
 		return { newCriticalSection, CriticalSectionDeleter() };
 	}
