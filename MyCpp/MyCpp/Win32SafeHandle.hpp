@@ -6,7 +6,7 @@
 namespace MyCpp
 {
 	template < typename HandleType >
-	struct SafeHandleCloser
+	struct safe_handle_closer
 	{
 		typedef HandleType pointer;
 
@@ -15,7 +15,7 @@ namespace MyCpp
 	};
 
 	template <>
-	struct SafeHandleCloser< HANDLE >
+	struct safe_handle_closer< HANDLE >
 	{
 		typedef HANDLE pointer;
 
@@ -27,7 +27,7 @@ namespace MyCpp
 	};
 
 	template <>
-	struct SafeHandleCloser< HKEY >
+	struct safe_handle_closer< HKEY >
 	{
 		typedef HKEY pointer;
 
@@ -39,7 +39,7 @@ namespace MyCpp
 	};
 
 	template <>
-	struct SafeHandleCloser< SC_HANDLE >
+	struct safe_handle_closer< SC_HANDLE >
 	{
 		typedef SC_HANDLE pointer;
 
@@ -50,7 +50,7 @@ namespace MyCpp
 		}
 	};
 
-	template < typename HandleType, typename Deleter = SafeHandleCloser< HandleType > >
+	template < typename HandleType, typename Deleter = safe_handle_closer< HandleType > >
 	using scoped_handle_t = std::unique_ptr< typename std::remove_pointer< HandleType >::type, Deleter >;
 
 	template < typename HandleType >
@@ -63,7 +63,7 @@ namespace MyCpp
 	template < typename HandleType >
 	inline shared_handle_t< HandleType > make_shared_handle( HandleType handle )
 	{
-		return { handle, SafeHandleCloser< HandleType >() };
+		return { handle, safe_handle_closer< HandleType >() };
 	}
 }
 

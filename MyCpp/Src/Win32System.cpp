@@ -94,18 +94,18 @@ namespace MyCpp
 			scoped_generic_handle processToken( token );
 			::GetTokenInformation( processToken.get(), TokenUser, null, 0, &bytes );
 
-			scoped_local_memory< TOKEN_USER > tokenUser( local_allocate< TOKEN_USER >( LPTR, bytes ) );
+			scoped_local_memory< TOKEN_USER > tokenUser( lcallocate< TOKEN_USER >( LPTR, bytes ) );
 			if ( ::GetTokenInformation( processToken.get(), TokenUser, tokenUser.get(), bytes, &bytes ) )
 			{
 				if ( ::IsValidSid( tokenUser->User.Sid ) )
 				{
 					dword sidLength = ::GetLengthSid( tokenUser->User.Sid );
-					scoped_local_memory< SID > sid( local_allocate< SID >( LPTR, sidLength ) );
+					scoped_local_memory< SID > sid( lcallocate< SID >( LPTR, sidLength ) );
 
 					::CopySid( sidLength, sid.get(), tokenUser->User.Sid );
 
 					if ( ::IsValidSid( sid.get() ) )
-						return { sid.release(), LocalMemoryDeleter< SID >() };
+						return { sid.release(), local_memory_deleter< SID >() };
 				}
 			}
 		}
@@ -284,7 +284,7 @@ namespace MyCpp
 
 	csptr_t CreateCriticalSection( uint spinCount )
 	{
-		LPCRITICAL_SECTION newCriticalSection = local_allocate< CRITICAL_SECTION >( LPTR, sizeof( CRITICAL_SECTION ) );
+		LPCRITICAL_SECTION newCriticalSection = lcallocate< CRITICAL_SECTION >( LPTR, sizeof( CRITICAL_SECTION ) );
 
 		if constexpr ( MYCPP_DEBUG == 1 )
 			::InitializeCriticalSectionEx( newCriticalSection, spinCount, 0 );
@@ -830,7 +830,7 @@ namespace MyCpp
 				
 				if ( returnedSize > size )
 				{
-					buffer.reset( local_allocate< byte >( LPTR, returnedSize ) );
+					buffer.reset( lcallocate< byte >( LPTR, returnedSize ) );
 					p = buffer.get();
 				}
 

@@ -5,7 +5,7 @@
 namespace MyCpp
 {
 	template < typename T >
-	struct LocalMemoryDeleter
+	struct local_memory_deleter
 	{
 		typedef T* pointer;
 		void operator () ( T* p )
@@ -16,7 +16,7 @@ namespace MyCpp
 	};
 
 	template < typename T >
-	inline T* local_allocate( unsigned int flags, std::size_t size )
+	inline T* lcallocate( unsigned int flags, std::size_t size )
 	{
 		T* p = reinterpret_cast< T* >( ::LocalAlloc( flags, size ) );
 
@@ -27,7 +27,7 @@ namespace MyCpp
 	}
 
 	template < typename T >
-	using scoped_local_memory = std::unique_ptr< T, LocalMemoryDeleter< T > >;
+	using scoped_local_memory = std::unique_ptr< T, local_memory_deleter< T > >;
 
 	template < typename T, typename Deleter >
 	using scoped_memory = std::unique_ptr< T, Deleter >;
