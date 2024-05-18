@@ -16,9 +16,10 @@ namespace MyCpp
 		{
 			if ( capacity <= 0 )
 				return ( to == null ) ? length : 0;
+
 			auto p = std::transform(
 				from
-				, from + length
+				, from + std::min( length, capacity )
 				, to
 				, [] ( const charX& c )
 			{
@@ -186,14 +187,15 @@ namespace MyCpp
 	{
 		typedef std::char_traits< charT > traits;
 
-		const static charT nullCh = charT();
+		constexpr charT NullChar = null;
 
-		if ( traits::eq( *s2, nullCh ) )
+		if ( traits::eq( *s2, NullChar ) )
 			return const_cast< charT* >( s1 );
 
 		const charT* haystack = s1;
 		const charT* needle = s2;
-		for ( ; !traits::eq( *haystack, nullCh ) && !traits::eq( *needle, nullCh ); ++haystack )
+
+		for ( ; !traits::eq( *haystack, NullChar ) && !traits::eq( *needle, NullChar ); ++haystack )
 		{
 			if ( strcmp_icase( haystack, needle ) == 0 )
 				return const_cast< charT* >( haystack );
