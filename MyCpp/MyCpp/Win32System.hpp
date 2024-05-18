@@ -116,7 +116,7 @@ namespace MyCpp
 		std::enable_if_t< std::is_same_v< Xword, qword >, Xword >
 		GetRegXword( HKEY parentKey, const string_t& subKey, const string_t& valueName )
 		{
-			return GetRegDword( HKEY parentKey, const string_t & subKey, const string_t & valueName );
+			return GetRegDword( parentKey, subKey, valueName );
 		}
 
 		// dword - 32bit unsigned
@@ -125,7 +125,7 @@ namespace MyCpp
 		std::enable_if_t< std::is_same_v< Xword, dword >, Xword >
 		GetRegXword( HKEY parentKey, const string_t& subKey, const string_t& valueName )
 		{
-			return GetRegQword( HKEY parentKey, const string_t & subKey, const string_t & valueName );
+			return GetRegQword( parentKey, subKey, valueName );
 		}
 	}
 
