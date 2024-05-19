@@ -38,9 +38,14 @@ namespace MyCpp
 			void clear() noexcept
 			{
 				if ( memptr != null && memptr != fixed_storage )
+				{
+					std::fill_n( memptr, memsize, charT() );
 					std::free( reinterpret_cast< void* >( memptr ) );
-				if ( memptr == fixed_storage )
+				}
+				else if ( memptr == fixed_storage )
+				{
 					std::fill_n( fixed_storage, count_of( fixed_storage ), charT() );
+				}
 
 				memptr = fixed_storage;
 				memsize = count_of( fixed_storage );
