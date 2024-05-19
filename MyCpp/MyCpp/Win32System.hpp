@@ -332,7 +332,7 @@ namespace MyCpp
 	}
 
 	template < typename Xword >
-	inline Xword GetXword( const path_t& file, const string_t& section, const string_t& name )
+	inline Xword GetIniXword( const path_t& file, const string_t& section, const string_t& name )
 	{
 		return Details::GetIniXword< Xword >( file, section, name );
 	}
