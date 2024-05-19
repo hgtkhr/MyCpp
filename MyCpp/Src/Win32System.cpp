@@ -691,7 +691,7 @@ namespace MyCpp
 		if ( result == FALSE )
 			exception< std::runtime_error >( FUNC_ERROR_MSG( "CreateProcess", "Failed. CommandLine = '%s', (0x%08x)", cmdLineArgs, ::GetLastError() ) );
 
-		return std::make_shared< Process >( 
+		return std::make_shared< Process >(
 			std::move( Process::Data( pi ) ) );
 	}
 
@@ -819,30 +819,33 @@ namespace MyCpp
 		LSTATUS r = ::RegOpenKeyEx( parentKey, subKey.c_str(), 0, KEY_READ, &hk );
 		if ( r == ERROR_SUCCESS )
 		{
-			dword returnedSize;
+			dword acquireSize = size;
 			scoped_reg_handle regHandle( hk );
 
-			r = ::RegQueryValueEx( hk, valueName.c_str(), null, null, null, &returnedSize );
+			r = ::RegQueryValueEx( hk, valueName.c_str(), null, null, null, &acquireSize );
 			if ( r == ERROR_SUCCESS  )
 			{
 				scoped_local_memory< byte > buffer;
-				byte* p = reinterpret_cast< byte* >( ptr );
+				byte* acquiredData = reinterpret_cast< byte* >( ptr );
 				
-				if ( returnedSize > size )
+				if ( acquireSize > size )
 				{
-					buffer.reset( lcallocate< byte >( LPTR, returnedSize ) );
-					p = buffer.get();
+					buffer.reset( lcallocate< byte >( LPTR, acquireSize ) );
+					acquiredData = buffer.get();
 				}
 
-				r = ::RegQueryValueEx( hk, valueName.c_str(), null, null, p, &returnedSize );
+				if ( ptr == null )
+					exception< std::logic_error >( ERROR_MSG( "ptr is null" ) );
+
+				r = ::RegQueryValueEx( hk, valueName.c_str(), null, null, acquiredData, &acquireSize );
 				if ( r == ERROR_SUCCESS )
 				{
-					uint n = std::min( static_cast< dword >( size ), returnedSize );
+					uint copyBytes = std::min( static_cast< dword >( size ), acquireSize );
 
-					if ( ptr != null && p != ptr )
-						std::memcpy( ptr, p, n );
+					if ( ptr != acquiredData )
+						std::memcpy( ptr, acquiredData, copyBytes );
 
-					return n;
+					return copyBytes;
 				}
 			}
 		}
@@ -991,6 +994,9 @@ namespace MyCpp
 
 	bool GetIniBinary( const path_t& file, const string_t& section, const string_t& name, void* ptr, uint size )
 	{
+		if ( ptr == null )
+			exception< std::logic_error >( ERROR_MSG( "ptr is null" ) );
+
 		return ( ::GetPrivateProfileStruct( section.c_str(), name.c_str(), ptr, size, to_string_t( file ).c_str() ) != FALSE );
 	}
 
@@ -1005,6 +1011,9 @@ namespace MyCpp
 	void SetIniBinary( const path_t& file, const string_t& section, const string_t& name, const void* ptr, uint size )
 	{
 		LPCTSTR pszName = ( !name.empty() ) ? name.c_str() : null;
+
+		if ( ptr == null )
+			exception< std::logic_error >( ERROR_MSG( "ptr is null" ) );
 
 		::WritePrivateProfileStruct( section.c_str(), pszName, const_cast< void* >( ptr ), size, to_string_t( file ).c_str() );
 	}

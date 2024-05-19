@@ -11,36 +11,51 @@
 #define FUNC_ERROR_MSG( calledFunction, msg, ... ) \
 	_T( "[%s()] %s() : " ## msg ), _T( __FUNCTION__ ), _T( calledFunction ), __VA_ARGS__
 
+#define ERROR_MSG( msg, ... ) \
+	_T( "[%s()] " ## msg ), _T( __FUNCTION__ ), __VA_ARGS__
+
 namespace MyCpp
 {
 	namespace Details
 	{
 		template < typename charT >
-		struct buffer
+		class safe_text_buffer
 		{
-			charT fixed_storage[512];
-			charT* memptr = null;
-			std::size_t memsize = 0;
+		public:
+			safe_text_buffer() noexcept = default;
 
-			void clear()
+			safe_text_buffer( const safe_text_buffer& ) = delete;
+			safe_text_buffer( const safe_text_buffer&& ) = delete;
+
+			safe_text_buffer& operator = ( const safe_text_buffer& ) = delete;
+			safe_text_buffer& operator = ( const safe_text_buffer&& ) = delete;
+
+			~safe_text_buffer() noexcept
+			{
+				clear();
+			}
+
+			void clear() noexcept
 			{
 				if ( memptr != null && memptr != fixed_storage )
 					std::free( reinterpret_cast< void* >( memptr ) );
+				if ( memptr == fixed_storage )
+					std::fill_n( fixed_storage, count_of( fixed_storage ), charT() );
 
-				memptr = null;
-				memsize = 0;
+				memptr = fixed_storage;
+				memsize = count_of( fixed_storage );
 			}
 
-			std::pair< charT*, std::size_t > get() const
+			std::pair< charT*, std::size_t > get() const noexcept
 			{
 				return std::make_pair( memptr, memsize );
 			}
 
-			std::pair< charT*, std::size_t > get( std::size_t desired )
+			std::pair< charT*, std::size_t > get( std::size_t desired ) noexcept
 			{
 				clear();
 
-				if ( desired > length_of( fixed_storage ) )
+				if ( desired > count_of( fixed_storage ) )
 				{
 					memptr = reinterpret_cast< charT* >( std::malloc( desired * sizeof( charT ) ) );
 					memsize = desired;
@@ -49,29 +64,23 @@ namespace MyCpp
 				if ( memptr == null )
 				{
 					memptr = fixed_storage;
-					memsize = length_of( fixed_storage );
+					memsize = count_of( fixed_storage );
 				}
 
 				std::fill_n( memptr, memsize, charT() );
 
 				return std::make_pair( memptr, memsize );
 			}
-
-			buffer()
-			{
-				std::fill_n( fixed_storage, length_of( fixed_storage ), charT() );
-			}
-
-			~buffer()
-			{
-				clear();
-			}
+		private:
+			charT fixed_storage[512] = {};
+			charT* memptr = fixed_storage;
+			std::size_t memsize = count_of( fixed_storage );
 		};
 
 		template < typename ... Args >
-		inline void CreateErrorMessage( buffer< char >& output, const char_t* fmt, const Args& ... args ) noexcept
+		inline void CreateErrorMessage( safe_text_buffer< char >& output, const char_t* fmt, const Args& ... args ) noexcept
 		{
-			buffer< char_t > temp;
+			safe_text_buffer< char_t > temp;
 			auto a = temp.get( _sctprintf( fmt, args ... ) + 1 );
 
 			_sntprintf_s( a.first, a.second, _TRUNCATE, fmt, args ... );
@@ -98,7 +107,7 @@ namespace MyCpp
 	template < typename ExceptionType, typename ... Args >
 	inline void exception( const char_t* fmt, const Args& ... args )
 	{
-		Details::buffer< char > message;
+		Details::safe_text_buffer< char > message;
 		Details::CreateErrorMessage( message, fmt, printf_arg( args ) ... );
 		Details::ThrowException< ExceptionType >( message.get().first );
 	}
@@ -112,7 +121,7 @@ namespace MyCpp
 	template < typename Notifer >
 	inline void alert( const char* what, Notifer notfier )
 	{
-		Details::buffer< char_t > message;
+		Details::safe_text_buffer< char_t > message;
 		auto converter = narrow_wide_converter< char_t >( what );
 		auto mem = message.get( converter.requires_size() );
 
