@@ -257,17 +257,6 @@ namespace MyCpp
 			return GetIniBinary( file, section, name, &data, sizeof( DataType ) );
 		}
 
-		// Not Primitive Data Type 
-		template
-		<
-			typename DataType,
-			std::enable_if_t< !std::is_standard_layout_v< DataType > || !std::is_trivial_v< DataType >, bool > = true
-		>
-		inline bool GetIniData( const path_t& file, const string_t& section, const string_t& name, DataType& data )
-		{
-			return data.LoadFromIni( std::make_tuple( file, section, name ) );
-		}
-			
 		// unsigned
 		template 
 		<
@@ -311,17 +300,6 @@ namespace MyCpp
 		inline void SetIniData( const path_t& file, const string_t& section, const string_t& name, const DataType& data )
 		{
 			SetIniBinary( file, section, name, &data, sizeof( DataType ) );
-		}
-			
-		// Not Primitive Data Type
-		template
-		<
-			typename DataType,
-			std::enable_if_t< !std::is_standard_layout_v< DataType > || !std::is_trivial_v< DataType >, bool > = true
-		>
-		inline void SetIniData( const path_t& file, const string_t& section, const string_t& name, const DataType& data )
-		{
-			data.SaveToIni( std::make_tuple( file, section, name ) );
 		}
 	}
 
