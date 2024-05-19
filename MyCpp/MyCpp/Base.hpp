@@ -1,12 +1,12 @@
 #pragma once
 
-#ifdef _MSVC_LANG
-#define _CPP_VERSION _MSVC_LANG
-#else
-#define _CPP_VERSION __cplusplus
+#if defined( _MSVC_LANG )
+#define MYCPP_STDCPP_VERSION _MSVC_LANG
+#elif defined ( __cplusplus )
+#define MYCPP_STDCPP_VERSION __cplusplus
 #endif
 
-#if _CPP_VERSION < 201703L
+#if !defined( MYCPP_STDCPP_VERSION ) || MYCPP_STDCPP_VERSION < 201703L
 #error "A compiler compatible with C++17 or later is required to use the library."
 #endif
 
