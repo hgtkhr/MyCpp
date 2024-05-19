@@ -1,6 +1,12 @@
 #pragma once
 
-#if !defined( __cplusplus ) || __cplusplus > 201703L
+#ifdef _MSVC_LANG
+#define _CPP_VERSION _MSVC_LANG
+#else
+#define _CPP_VERSION __cplusplus
+#endif
+
+#if _CPP_VERSION < 201703L
 #error "A compiler compatible with C++17 or later is required to use the library."
 #endif
 
