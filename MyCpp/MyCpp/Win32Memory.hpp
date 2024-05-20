@@ -27,17 +27,6 @@ namespace MyCpp
 	}
 
 	template < typename T >
-	inline T* lcallocate( unsigned int flags, std::size_t size )
-	{
-		T* p = reinterpret_cast< T* >( ::LocalAlloc( flags, size ) );
-
-		if ( p == null )
-			throw std::bad_alloc();
-
-		return p;
-	}
-
-	template < typename T >
 	using scoped_local_memory = std::unique_ptr< T, local_memory_deleter< T > >;
 
 	template < typename T >
@@ -46,8 +35,8 @@ namespace MyCpp
 	template < typename T, typename Deleter >
 	using scoped_memory = std::unique_ptr< T, Deleter >;
 
-	template < typename T, typename Deleter >
-	using shared_memory = std::unique_ptr< T, Deleter >;
+	template < typename T >
+	using shared_memory = std::shared_ptr< T >;
 
 	template < typename T >
 	scoped_local_memory< T >&& make_scoped_local_memory( unsigned int flags, std::size_t size )
@@ -65,4 +54,6 @@ namespace MyCpp
 #if defined( MYCPP_GLOBALTYPEDES )
 using MyCpp::scoped_local_memory;
 using MyCpp::scoped_memory;
+using MyCpp::shared_local_memory;
+using MyCpp::shared_memory;
 #endif
