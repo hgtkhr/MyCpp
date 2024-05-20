@@ -830,7 +830,7 @@ namespace MyCpp
 				
 				if ( acquireSize > size )
 				{
-					buffer.reset( lcallocate< byte >( LPTR, acquireSize ) );
+					buffer = make_scoped_local_memory< byte >( LPTR, acquireSize );
 					acquiredData = buffer.get();
 				}
 

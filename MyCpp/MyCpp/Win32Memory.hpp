@@ -122,51 +122,51 @@ namespace MyCpp
 	template < typename T > using shared_heap_memory = shared_memory_t< T >;
 
 	template < typename T >
-	inline scoped_local_memory< T >&& make_scoped_local_memory( uint flags, std::size_t size )
+	inline scoped_local_memory< T > make_scoped_local_memory( uint flags, std::size_t size )
 	{
-		return std::move( scoped_local_memory< T >( lcallocate( flags, size ) ) );
+		return std::move( scoped_local_memory< T >( lcallocate< T >( flags, size ) ) );
 	}
 
 	template < typename T >
-	inline shared_local_memory< T >&& make_shared_local_memory( uint flags, std::size_t size )
+	inline shared_local_memory< T > make_shared_local_memory( uint flags, std::size_t size )
 	{
-		return std::move( shared_local_memory< T >( lcallocate( flags, size ), local_memory_deleter< T >() ) );
+		return std::move( shared_local_memory< T >( lcallocate< T >( flags, size ), local_memory_deleter< T >() ) );
 	}
 
 	template < typename T >
-	inline scoped_global_memory< T >&& make_scoped_global_memory( uint flags, std::size_t size )
+	inline scoped_global_memory< T > make_scoped_global_memory( uint flags, std::size_t size )
 	{
-		return std::move( scoped_global_memory< T >( glallocate( flags, size ) ) );
+		return std::move( scoped_global_memory< T >( glallocate< T >( flags, size ) ) );
 	}
 
 	template < typename T >
-	inline shared_global_memory< T >&& make_shared_global_memory( uint flags, std::size_t size )
+	inline shared_global_memory< T > make_shared_global_memory( uint flags, std::size_t size )
 	{
-		return std::move( shared_global_memory< T >( glallocate( flags, size ), global_memory_deleter< T >() ) );
+		return std::move( shared_global_memory< T >( glallocate< T >( flags, size ), global_memory_deleter< T >() ) );
 	}
 
 	template < typename T >
-	inline scoped_virtual_memory< T >&& make_scoped_virtual_memory( std::size_t size, dword allocationType, dword flagProtect, void* startAddr = null )
+	inline scoped_virtual_memory< T > make_scoped_virtual_memory( std::size_t size, dword allocationType, dword flagProtect, void* startAddr = null )
 	{
-		return std::move( scoped_virtual_memory< T >( vtallocate( startAddr, size, allocationType, flagProtect, startAddr ) ) );
+		return std::move( scoped_virtual_memory< T >( vtallocate< T >( startAddr, size, allocationType, flagProtect, startAddr ) ) );
 	}
 
 	template < typename T >
-	inline shared_virtual_memory< T >&& make_shared_virtual_memory( std::size_t size, dword allocationType, dword flagProtect, void* startAddr = null )
+	inline shared_virtual_memory< T > make_shared_virtual_memory( std::size_t size, dword allocationType, dword flagProtect, void* startAddr = null )
 	{
-		return std::move( shared_virtual_memory< T >( vtallocate( startAddr, size, allocationType, flagProtect ), virtual_memory_deleter< T >() ) );
+		return std::move( shared_virtual_memory< T >( vtallocate< T >( startAddr, size, allocationType, flagProtect ), virtual_memory_deleter< T >() ) );
 	}
 
 	template < typename T >
-	inline scoped_heap_memory< T >&& make_scoped_heap_memory( dword flags, std::size_t size, HANDLE hheap = ::GetProcessHeap() )
+	inline scoped_heap_memory< T > make_scoped_heap_memory( dword flags, std::size_t size, HANDLE hheap = ::GetProcessHeap() )
 	{
-		return std::move( scoped_heap_memory< T >( hpallocate( flags, size, hheap ) ) );
+		return std::move( scoped_heap_memory< T >( hpallocate< T >( flags, size, hheap ) ) );
 	}
 
 	template < typename T >
-	inline shared_heap_memory< T >&& make_shared_heap_memory( dword flags, std::size_t size, HANDLE hheap = ::GetProcessHeap() )
+	inline shared_heap_memory< T > make_shared_heap_memory( dword flags, std::size_t size, HANDLE hheap = ::GetProcessHeap() )
 	{
-		return std::move( shared_heap_memory< T >( hpallocate( flags, size, hheap ), heap_memory_deleter< T >() ) );
+		return std::move( shared_heap_memory< T >( hpallocate< T >( flags, size, hheap ), heap_memory_deleter< T >() ) );
 	}
 }
 
