@@ -61,11 +61,15 @@ namespace MyCpp
 		return TryLockCriticalSection( *csObj );
 	}
 
-	template < typename T, dword Size = sizeof( T ) >
+	template 
+	<
+		typename T,
+		std::enable_if_t< std::is_standard_layout_v< T >&& std::is_trivial_v< T >, bool > = true,
+		dword Size = sizeof( T )
+	>
 	inline dword Fill0( T& podStruct )
 	{
-		ZeroMemory( &podStruct, Size );
-
+		::ZeroMemory( &podStruct, Size );
 		return Size;
 	}
 
