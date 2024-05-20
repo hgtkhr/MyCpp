@@ -70,7 +70,7 @@ namespace MyCpp
 	}
 
 	template < typename Vector, typename Source >
-	std::size_t adaptive_load( Vector& v, std::size_t initn, Source source )
+	inline std::size_t adaptive_load( Vector& v, std::size_t initn, Source source )
 	{
 		if ( v.size() < initn )
 			v.resize( initn );

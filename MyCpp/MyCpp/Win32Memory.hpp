@@ -15,15 +15,22 @@ namespace MyCpp
 		}
 	};
 
+	template < typename T, typename AllocFunc, typename ... Args >
+	inline T* malloc_func_adapter( AllocFunc allocFunc, Args&& ... args )
+	{
+		T* ptr = static_cast< T* >( reinterpret_cast< void* >( allocFunc( std::forward< Args >( args ) ... ) ) );
+
+		if ( ptr == nullptr )
+			throw std::bad_alloc();
+
+		return ptr;
+	}
+
+
 	template < typename T >
 	inline T* lcallocate( unsigned int flags, std::size_t size )
 	{
-		T* p = reinterpret_cast< T* >( ::LocalAlloc( flags, size ) );
-
-		if ( p == null )
-			throw std::bad_alloc();
-
-		return p;
+		return malloc_func_adapter< T >( &::LocalAlloc, flags, size );
 	}
 
 	template < typename T >
@@ -39,13 +46,13 @@ namespace MyCpp
 	using shared_memory = std::shared_ptr< T >;
 
 	template < typename T >
-	scoped_local_memory< T >&& make_scoped_local_memory( unsigned int flags, std::size_t size )
+	inline scoped_local_memory< T >&& make_scoped_local_memory( unsigned int flags, std::size_t size )
 	{
 		return std::move( scoped_local_memory< T >( lcallocate( flags, size ) ) );
 	}
 
 	template < typename T >
-	shared_local_memory< T >&& make_shared_local_memory( unsigned int flags, std::size_t size )
+	inline shared_local_memory< T >&& make_shared_local_memory( unsigned int flags, std::size_t size )
 	{
 		return std::move( shared_local_memory< T >( lcallocate( flags, size ), local_memory_deleter< T >() ) );
 	}
