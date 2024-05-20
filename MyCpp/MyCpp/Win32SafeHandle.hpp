@@ -67,7 +67,7 @@ namespace MyCpp
 	}
 
 	template < typename HandleType, typename Deleter >
-	inline shared_handle_t< HandleType >&& make_shared_handle( HandleType handle, Deleter deleter = safe_handle_closer< HandleType >() )
+	inline shared_handle_t< HandleType > make_shared_handle( HandleType handle, Deleter deleter = safe_handle_closer< HandleType >() )
 	{
 		return shared_handle_t< HandleType >( handle, deleter );
 	}
