@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <utility>
 #include "MyCpp/Win32Base.hpp"
 
 namespace MyCpp
@@ -15,6 +16,56 @@ namespace MyCpp
 		}
 	};
 
+	template < typename T >
+	struct global_memory_deleter
+	{
+		typedef T* pointer;
+		void operator () ( T* p )
+		{
+			if ( p != null )
+				::GlobalFree( reinterpret_cast< HGLOBAL >( p ) );
+		}
+	};
+
+	template < typename T >
+	struct virtual_memory_deleter
+	{
+		typedef T* pointer;
+		void operator () ( T* p )
+		{
+			if ( p != null )
+				::VirtualFree( p, 0, MEM_RELEASE );
+		}
+	};
+
+	namespace Details
+	{
+		struct heapmem_header
+		{
+			HANDLE hHeap;
+			byte data[1];
+		};
+	}
+
+	template < typename T >
+	struct heap_memory_deleter
+	{
+		typedef T* pointer;
+		void operator () ( T* p )
+		{
+			if ( p != null )
+			{
+				Details::heapmem_header* hdr = reinterpret_cast< heapmem_header* >( reinterpret_cast< byte* >( p ) - offsetof( Details::heapmem_header, data ) );
+				HANDLE hHeap = hdr->hHeap;
+
+				::HeapFree( hHeap, 0, hdr );
+
+				if ( hHeap != null && hHeap != ::GetProcessHeap() )
+					::HeapDestroy( hdr->hHeap );
+			}
+		}
+	};
+
 	template < typename T, typename AllocFunc, typename ... Args >
 	inline T* malloc_func_adapter( AllocFunc allocFunc, Args&& ... args )
 	{
@@ -26,41 +77,108 @@ namespace MyCpp
 		return ptr;
 	}
 
-
 	template < typename T >
-	inline T* lcallocate( unsigned int flags, std::size_t size )
+	inline T* lcallocate( uint flags, std::size_t size )
 	{
 		return malloc_func_adapter< T >( &::LocalAlloc, flags, size );
 	}
 
 	template < typename T >
-	using scoped_local_memory = std::unique_ptr< T, local_memory_deleter< T > >;
+	inline T* glallocate( uint flags, std::size_t size )
+	{
+		return malloc_func_adapter< T >( &::GlobalAlloc, flags, size );
+	}
 
 	template < typename T >
-	using shared_local_memory = std::shared_ptr< T >;
+	inline T* vtallocate( std::size_t size, dword allocationType, dword flagProtect, void* startAddr = null )
+	{
+		return malloc_func_adapter< T >( &::VirtualAlloc, startAddr, size, allocationType, flagProtect );
+	}
+
+	template < typename T >
+	inline T* hpallocate( dword flags, std::size_t size, HANDLE hheap = ::GetProcessHeap() )
+	{
+		Details::heapmem_header* hdr = malloc_func_adapter< Details::heapmem_header* >( &::HeapAlloc, hheap, flags, size + sizeof( heapmem_header ) );
+		hdr->hHeap = hheap;
+		return reinterpret_cast< T* >( hdr->data );
+	}
 
 	template < typename T, typename Deleter >
-	using scoped_memory = std::unique_ptr< T, Deleter >;
+	using scoped_memory_t = std::unique_ptr< T, Deleter >;
 
 	template < typename T >
-	using shared_memory = std::shared_ptr< T >;
+	using shared_memory_t = std::shared_ptr< T >;
+
+	template < typename T > using scoped_local_memory = scoped_memory_t< T, local_memory_deleter< T > >;
+	template < typename T > using shared_local_memory = shared_memory_t< T >;
+
+	template < typename T > using scoped_global_memory = scoped_memory_t< T, global_memory_deleter< T > >;
+	template < typename T > using shared_global_memory = shared_memory_t< T >;
+
+	template < typename T > using scoped_virtual_memory = scoped_memory_t< T, virtual_memory_deleter< T > >;
+	template < typename T > using shared_virtual_memory = shared_memory_t< T >;
+
+	template < typename T > using scoped_heap_memory = scoped_memory_t< T, heap_memory_deleter< T > >;
+	template < typename T > using shared_heap_memory = shared_memory_t< T >;
 
 	template < typename T >
-	inline scoped_local_memory< T >&& make_scoped_local_memory( unsigned int flags, std::size_t size )
+	inline scoped_local_memory< T >&& make_scoped_local_memory( uint flags, std::size_t size )
 	{
 		return std::move( scoped_local_memory< T >( lcallocate( flags, size ) ) );
 	}
 
 	template < typename T >
-	inline shared_local_memory< T >&& make_shared_local_memory( unsigned int flags, std::size_t size )
+	inline shared_local_memory< T >&& make_shared_local_memory( uint flags, std::size_t size )
 	{
 		return std::move( shared_local_memory< T >( lcallocate( flags, size ), local_memory_deleter< T >() ) );
+	}
+
+	template < typename T >
+	inline scoped_global_memory< T >&& make_scoped_global_memory( uint flags, std::size_t size )
+	{
+		return std::move( scoped_global_memory< T >( glallocate( flags, size ) ) );
+	}
+
+	template < typename T >
+	inline shared_global_memory< T >&& make_shared_global_memory( uint flags, std::size_t size )
+	{
+		return std::move( shared_global_memory< T >( glallocate( flags, size ), global_memory_deleter< T >() ) );
+	}
+
+	template < typename T >
+	inline scoped_virtual_memory< T >&& make_scoped_virtual_memory( std::size_t size, dword allocationType, dword flagProtect, void* startAddr = null )
+	{
+		return std::move( scoped_virtual_memory< T >( vtallocate( startAddr, size, allocationType, flagProtect, startAddr ) ) );
+	}
+
+	template < typename T >
+	inline shared_virtual_memory< T >&& make_shared_virtual_memory( std::size_t size, dword allocationType, dword flagProtect, void* startAddr = null )
+	{
+		return std::move( shared_virtual_memory< T >( vtallocate( startAddr, size, allocationType, flagProtect ), virtual_memory_deleter< T >() ) );
+	}
+
+	template < typename T >
+	inline scoped_heap_memory< T >&& make_scoped_heap_memory( dword flags, std::size_t size, HANDLE hheap = ::GetProcessHeap() )
+	{
+		return std::move( scoped_heap_memory< T >( hpallocate( flags, size, hheap ) ) );
+	}
+
+	template < typename T >
+	inline shared_heap_memory< T >&& make_shared_heap_memory( dword flags, std::size_t size, HANDLE hheap = ::GetProcessHeap() )
+	{
+		return std::move( shared_heap_memory< T >( hpallocate( flags, size, hheap ), heap_memory_deleter< T >() ) );
 	}
 }
 
 #if defined( MYCPP_GLOBALTYPEDES )
+using MyCpp::scoped_memory_t;
+using MyCpp::shared_memory_t;
 using MyCpp::scoped_local_memory;
-using MyCpp::scoped_memory;
 using MyCpp::shared_local_memory;
-using MyCpp::shared_memory;
+using MyCpp::scoped_global_memory;
+using MyCpp::shared_global_memory;
+using MyCpp::scoped_virtual_memory;
+using MyCpp::shared_virtual_memory;
+using MyCpp::scoped_heap_memory;
+using MyCpp::shared_heap_memory;
 #endif
