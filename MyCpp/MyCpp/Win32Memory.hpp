@@ -47,7 +47,7 @@ namespace MyCpp
 	template < typename T >
 	shared_local_memory< T >&& make_shared_local_memory( unsigned int flags, std::size_t size )
 	{
-		return std::move( shared_local_memory< T >( lcallocate( flags, size ), local_memory_deleter< T > ) );
+		return std::move( shared_local_memory< T >( lcallocate( flags, size ), local_memory_deleter< T >() ) );
 	}
 }
 
