@@ -165,7 +165,7 @@ namespace MyCpp
 	template < typename T >
 	inline shared_heap_memory< T > make_shared_heap_memory( dword flags, std::size_t size, HANDLE hheap = ::GetProcessHeap() )
 	{
-		return std::move( shared_heap_memory< T >( hpallocate< T >( flags, size, hheap ), heap_memory_deleter< T >() ) );
+		return shared_heap_memory< T >( hpallocate< T >( flags, size, hheap ), heap_memory_deleter< T >() );
 	}
 }
 
