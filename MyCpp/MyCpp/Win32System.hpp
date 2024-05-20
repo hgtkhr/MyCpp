@@ -50,7 +50,7 @@ namespace MyCpp
 		};
 	}
 
-	typedef scoped_handle_t< HANDLE, Details::MutexDeleter > mutex_t;
+	typedef scoped_handle< HANDLE, Details::MutexDeleter > mutex_t;
 	typedef std::unique_ptr< CRITICAL_SECTION, Details::CriticalSectionExit > cslock_t;
 
 	std::pair< dword, mutex_t > TryLockMutex( const string_t& name, bool waitForGetOwnership );
