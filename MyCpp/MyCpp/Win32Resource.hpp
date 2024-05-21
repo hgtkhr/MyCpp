@@ -4,6 +4,8 @@
 
 namespace MyCpp
 {
+	// Define HCURSOR as an independent type since HCURSOR is a typedef of HICON and type ambiguity resolution is not possible.
+	// Design hcursor_wrapper to behave as a HCURSOR.
 	class hcursor_wrapper
 	{
 	public:
@@ -42,6 +44,8 @@ namespace MyCpp
 		HCURSOR m_hcursor = null;
 	};
 
+	// The return value of LoadCursor() or LoadImage() should be hcursor_t.
+	// Otherwise, smart-pointer's delteter will not work correctly.
 	typedef hcursor_wrapper hcursor_t;
 
 	template <>
