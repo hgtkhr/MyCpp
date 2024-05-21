@@ -46,7 +46,7 @@ namespace MyCpp
 
 	// The return value of LoadCursor() or LoadImage() should be hcursor_t.
 	// Otherwise, smart-pointer's delteter will not work correctly.
-	typedef hcursor_wrapper hcursor_t;
+	typedef hcursor_wrapper HCURSOR_T;
 
 	template <>
 	struct safe_handle_closer< HBITMAP >
@@ -73,11 +73,11 @@ namespace MyCpp
 	};
 
 	template <>
-	struct safe_handle_closer< hcursor_t >
+	struct safe_handle_closer< HCURSOR_T >
 	{
-		typedef hcursor_t pointer;
+		typedef HCURSOR_T pointer;
 
-		void operator () ( hcursor_t h )
+		void operator () ( HCURSOR_T h )
 		{
 			if ( h != null )
 				::DestroyCursor( h );
@@ -123,5 +123,5 @@ namespace MyCpp
 }
 
 #if defined( MYCPP_GLOBALTYPEDES )
-using MyCpp::hcursor_t;
+using MyCpp::HCURSOR_T;
 #endif
