@@ -397,6 +397,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Src\StringUtils.cpp" />
+    <ClCompile Include="Src\Win32Resource.cpp" />
     <ClCompile Include="Src\Win32System.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -408,6 +409,7 @@
     <ClInclude Include="MyCpp\StringUtils.hpp" />
     <ClInclude Include="MyCpp\Win32Base.hpp" />
     <ClInclude Include="MyCpp\Win32Memory.hpp" />
+    <ClInclude Include="MyCpp\Win32Resource.hpp" />
     <ClInclude Include="MyCpp\Win32SafeHandle.hpp" />
     <ClInclude Include="MyCpp\Win32System.hpp" />
   </ItemGroup>
