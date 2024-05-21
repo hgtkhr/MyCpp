@@ -44,7 +44,7 @@ namespace MyCpp
 		HCURSOR m_hcursor = null;
 	};
 
-	// The return value of LoadCursor() or LoadImage() should be hcursor_t.
+	// The return value of LoadCursor() or LoadImage() should be HCURSOR_T.
 	// Otherwise, smart-pointer's delteter will not work correctly.
 	typedef hcursor_wrapper HCURSOR_T;
 
