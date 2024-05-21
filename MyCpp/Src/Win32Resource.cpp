@@ -2,6 +2,9 @@
 #include "MyCpp/Win32System.hpp"
 #include "MyCpp/IntCast.hpp"
 
+#pragma comment( lib, "gdi32.lib" )
+#pragma comment( lib, "user32.lib" )
+
 namespace MyCpp
 {
 	std::pair< void*, std::size_t > GetRawResourceData( HMODULE module, const char_t* type, const char_t* name, word language )
