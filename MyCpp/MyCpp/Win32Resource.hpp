@@ -4,12 +4,12 @@
 
 namespace MyCpp
 {
-	class hcursor_t
+	class hcursor_wrapper
 	{
 	public:
-		hcursor_t() = default;
-		hcursor_t( const hcursor_t& other ) = default;
-		hcursor_t( hcursor_t&& other ) noexcept = default;
+		hcursor_wrapper() = default;
+		hcursor_wrapper( const hcursor_wrapper& other ) = default;
+		hcursor_wrapper( hcursor_wrapper&& other ) noexcept = default;
 
 		operator HCURSOR () const
 		{
@@ -21,18 +21,18 @@ namespace MyCpp
 			return m_hcursor;
 		}
 
-		hcursor_t& operator = ( HCURSOR other )
+		hcursor_wrapper& operator = ( HCURSOR other )
 		{
 			m_hcursor = other;
 		}
 
-		hcursor_t& operator = ( const hcursor_t& other ) = default;
-		hcursor_t& operator = ( hcursor_t&& other ) noexcept = default;
+		hcursor_wrapper& operator = ( const hcursor_wrapper& other ) = default;
+		hcursor_wrapper& operator = ( hcursor_wrapper&& other ) noexcept = default;
 	private:
 		HCURSOR m_hcursor = null;
 	};
 
-	typedef hcursor_t HCURSOR2;
+	typedef hcursor_wrapper hcursor_t;
 
 	template <>
 	struct safe_handle_closer< HBITMAP >
@@ -59,11 +59,11 @@ namespace MyCpp
 	};
 
 	template <>
-	struct safe_handle_closer< HCURSOR2 >
+	struct safe_handle_closer< hcursor_t >
 	{
-		typedef HCURSOR2 pointer;
+		typedef hcursor_t pointer;
 
-		void operator () ( HCURSOR2 h )
+		void operator () ( hcursor_t h )
 		{
 			if ( h != null )
 				::DestroyCursor( h );
@@ -109,5 +109,5 @@ namespace MyCpp
 }
 
 #if defined( MYCPP_GLOBALTYPEDES )
-using MyCpp::HCURSOR2;
+using MyCpp::hcursor_t;
 #endif
