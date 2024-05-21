@@ -44,6 +44,13 @@ namespace MyCpp
 			HANDLE hHeap;
 			byte data[1];
 		};
+
+		inline heapmem_header* GetHeapMemoryHeader( void* ptr )
+		{
+			byte* p = reinterpret_cast< byte* >( ptr );
+			heapmem_header* hdr = reinterpret_cast< heapmem_header* >( p - offsetof( heapmem_header, data ) );
+			return hdr;
+		}
 	}
 
 	template < typename T >
@@ -54,7 +61,7 @@ namespace MyCpp
 		{
 			if ( p != null )
 			{
-				Details::heapmem_header* hdr = reinterpret_cast< heapmem_header* >( reinterpret_cast< byte* >( p ) - offsetof( Details::heapmem_header, data ) );
+				Details::heapmem_header* hdr = Details::GetHeapMemoryHeader( p );
 				HANDLE hHeap = hdr->hHeap;
 
 				::HeapFree( hHeap, 0, hdr );
@@ -97,7 +104,7 @@ namespace MyCpp
 	template < typename T >
 	inline T* hpallocate( dword flags, std::size_t size, HANDLE hheap = ::GetProcessHeap() )
 	{
-		Details::heapmem_header* hdr = malloc_func_adapter< Details::heapmem_header* >( &::HeapAlloc, hheap, flags, size + sizeof( heapmem_header ) );
+		Details::heapmem_header* hdr = malloc_func_adapter< Details::heapmem_header* >( &::HeapAlloc, hheap, flags, sizeof( heapmem_header ) + size );
 		hdr->hHeap = hheap;
 		return reinterpret_cast< T* >( hdr->data );
 	}
@@ -166,6 +173,11 @@ namespace MyCpp
 	inline shared_heap_memory< T > make_shared_heap_memory( dword flags, std::size_t size, HANDLE hheap = ::GetProcessHeap() )
 	{
 		return shared_heap_memory< T >( hpallocate< T >( flags, size, hheap ), heap_memory_deleter< T >() );
+	}
+
+	inline HANDLE get_heap_memory_handle( void* ptr )
+	{
+		return Details::GetHeapMemoryHeader( ptr )->hHeap;
 	}
 }
 
