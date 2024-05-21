@@ -131,6 +131,30 @@ using MyCpp::HCURSOR_T;
 #endif
 
 #undef LoadCursor
+#undef LoadCursorFromFile
+#undef CopyCursor
+
+inline 
+HCURSOR_T CreateCursor(
+	HINSTANCE  hInst,
+	int        xHotSpot,
+	int        yHotSpot,
+	int        nWidth,
+	int        nHeight,
+	void*      pvANDPlane,
+	void*      pvXORPlane
+)
+{
+	return ::CreateCursor( 
+		hInst, 
+		xHotSpot, 
+		yHotSpot, 
+		nWidth, 
+		nHeight, 
+		const_cast< const void* >( pvANDPlane ), 
+		const_cast< const void* >( pvXORPlane ) 
+	);
+}
 
 inline HCURSOR_T LoadCursor( HINSTANCE hInstance, LPCSTR lpCursorName )
 {
@@ -142,3 +166,17 @@ inline HCURSOR_T LoadCursor( HINSTANCE hInstance, LPCWSTR lpCursorName )
 	return ::LoadCursorW( hInstance, lpCursorName );
 }
 
+inline HCURSOR_T LoadCursorFromFile( LPCSTR lpFileName )
+{
+	return ::LoadCursorFromFileA( lpFileName );
+}
+
+inline HCURSOR_T LoadCursorFromFile( LPCWSTR lpFileName )
+{
+	return ::LoadCursorFromFileW( lpFileName );
+}
+
+inline HCURSOR_T CopyCursor( HCURSOR cursor )
+{
+	return ::CopyIcon( cursor );
+}
