@@ -9,6 +9,10 @@ namespace MyCpp
 	class hcursor_wrapper
 	{
 	public:
+		hcursor_wrapper( HCURSOR hCursor )
+			: m_hcursor( hCursor )
+		{}
+
 		hcursor_wrapper() = default;
 		hcursor_wrapper( const hcursor_wrapper& other ) = default;
 		hcursor_wrapper( hcursor_wrapper&& other ) noexcept = default;
@@ -125,3 +129,16 @@ namespace MyCpp
 #if defined( MYCPP_GLOBALTYPEDES )
 using MyCpp::HCURSOR_T;
 #endif
+
+#undef LoadCursor
+
+inline HCURSOR_T LoadCursor( HINSTANCE hInstance, LPCSTR lpCursorName )
+{
+	return ::LoadCursorA( hInstance, lpCursorName );
+}
+
+inline HCURSOR_T LoadCursor( HINSTANCE hInstance, LPCWSTR lpCursorName )
+{
+	return ::LoadCursorW( hInstance, lpCursorName );
+}
+
