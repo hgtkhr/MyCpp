@@ -21,6 +21,16 @@ namespace MyCpp
 			return m_hcursor;
 		}
 
+		HCURSOR* operator & ()
+		{
+			return &m_hcursor;
+		}
+
+		const HCURSOR* operator & () const
+		{
+			return &m_hcursor;
+		}
+
 		hcursor_wrapper& operator = ( HCURSOR other )
 		{
 			m_hcursor = other;
