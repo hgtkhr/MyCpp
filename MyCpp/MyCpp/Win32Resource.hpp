@@ -37,9 +37,9 @@ namespace MyCpp
 			return &m_hcursor;
 		}
 
-		hcursor_wrapper& operator = ( HCURSOR other )
+		hcursor_wrapper& operator = ( HCURSOR hCursor )
 		{
-			m_hcursor = other;
+			m_hcursor = hCursor;
 		}
 
 		hcursor_wrapper& operator = ( const hcursor_wrapper& other ) = default;
