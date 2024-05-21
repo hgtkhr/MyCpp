@@ -60,6 +60,10 @@ namespace MyCpp
 	typedef scoped_handle_t< HKEY >			scoped_reg_handle;
 	typedef scoped_handle_t< SC_HANDLE >	scoped_svc_handle;
 
+	typedef shared_handle_t< HANDLE >		shared_generic_handle;
+	typedef shared_handle_t< HKEY >			shared_reg_handle;
+	typedef shared_handle_t< SC_HANDLE >	shared_svc_handle;
+
 	template < typename HandleType, typename Deleter >
 	inline scoped_handle_t< HandleType, Deleter > make_scoped_handle_t( HandleType handle, Deleter = safe_handle_closer< HandleType >() )
 	{
@@ -79,4 +83,7 @@ using MyCpp::shared_handle_t;
 using MyCpp::scoped_generic_handle;
 using MyCpp::scoped_reg_handle;
 using MyCpp::scoped_svc_handle;
+using MyCpp::shared_generic_handle;
+using MyCpp::shared_reg_handle;
+using MyCpp::shared_svc_handle;
 #endif
