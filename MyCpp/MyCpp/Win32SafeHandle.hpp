@@ -65,15 +65,27 @@ namespace MyCpp
 	typedef shared_handle_t< SC_HANDLE >	shared_svc_handle;
 
 	template < typename HandleType, typename Deleter >
-	inline scoped_handle_t< HandleType, Deleter > make_scoped_handle_t( HandleType handle, Deleter = safe_handle_closer< HandleType >() )
+	inline scoped_handle_t< HandleType, Deleter > make_scoped_handle( HandleType handle, Deleter )
 	{
-		return scoped_handle_t< HandleType, Deleter >( handle );
+		return std::move( scoped_handle_t< HandleType, Deleter >( handle ) );
+	}
+
+	template < typename HandleType >
+	inline scoped_handle_t< HandleType > make_scoped_handle( HandleType handle )
+	{
+		return std::move( scoped_handle_t< HandleType >( handle ) );
 	}
 
 	template < typename HandleType, typename Deleter >
-	inline shared_handle_t< HandleType > make_shared_handle( HandleType handle, Deleter deleter = safe_handle_closer< HandleType >() )
+	inline shared_handle_t< HandleType > make_shared_handle( HandleType handle, Deleter deleter )
 	{
-		return shared_handle_t< HandleType >( handle, deleter );
+		return std::move( shared_handle_t< HandleType >( handle, deleter ) );
+	}
+
+	template < typename HandleType >
+	inline shared_handle_t< HandleType > make_shared_handle( HandleType handle )
+	{
+		return std::move( shared_handle_t< HandleType >( handle, safe_handle_closer< HandleType >() ) );
 	}
 }
 

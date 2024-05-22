@@ -91,16 +91,17 @@ namespace MyCpp
 		if ( ::OpenProcessToken( process, TOKEN_QUERY, &token ) )
 		{
 			dword bytes;
-			scoped_generic_handle processToken( token );
+
+			auto processToken = make_scoped_handle< HANDLE >( token );
 			::GetTokenInformation( processToken.get(), TokenUser, null, 0, &bytes );
 
-			scoped_local_memory< TOKEN_USER > tokenUser( lcallocate< TOKEN_USER >( LPTR, bytes ) );
+			auto tokenUser = make_scoped_local_memory< TOKEN_USER >( LPTR, bytes );
 			if ( ::GetTokenInformation( processToken.get(), TokenUser, tokenUser.get(), bytes, &bytes ) )
 			{
 				if ( ::IsValidSid( tokenUser->User.Sid ) )
 				{
 					dword sidLength = ::GetLengthSid( tokenUser->User.Sid );
-					scoped_local_memory< SID > sid( lcallocate< SID >( LPTR, sidLength ) );
+					auto sid = make_scoped_local_memory< SID >( LPTR, sidLength );
 
 					::CopySid( sidLength, sid.get(), tokenUser->User.Sid );
 
