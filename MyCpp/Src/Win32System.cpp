@@ -737,11 +737,12 @@ namespace MyCpp
 	{
 		struct FINDWINDOWINFO
 		{
+			static constexpr std::size_t BUFFER_SIZE = 256;
 			HWND hwnd;
 			dword pid;
 			LPCTSTR className;
 			LPCTSTR windowName;
-			vchar_t* pWorkBuffer;
+			vchar_t buffer;
 		};
 
 		inline std::size_t GetWindowClassName( HWND hwnd, vchar_t& name )
@@ -763,19 +764,18 @@ namespace MyCpp
 			return ::GetWindowText( hwnd, cstr_t( name ), numeric_cast< int >( name.size() ) );
 		}
 
-		BOOL CALLBACK EnumWindowsProc(
-			HWND hwnd,      // 親ウィンドウのハンドル
+		BOOL CALLBACK EnumChildWindowsProc(
+			HWND hwnd,      // 子ウィンドウのハンドル
 			LPARAM lParam   // アプリケーション定義の値
-			)
+		)
 		{
 			FINDWINDOWINFO* p = pointer_int_cast< FINDWINDOWINFO* >( lParam );
-			vchar_t& buffer = *p->pWorkBuffer;
 
-			GetWindowClassName( hwnd, buffer );
-			if ( ::_tcsicmp( cstr_t( buffer ), p->className ) == 0 )
+			GetWindowClassName( hwnd, p->buffer );
+			if ( ::_tcsicmp( cstr_t( p->buffer ), p->className ) == 0 )
 			{
-				GetWindowName( hwnd, buffer );
-				if ( ::_tcsicmp( cstr_t( buffer ), p->windowName ) == 0 )
+				GetWindowName( hwnd, p->buffer );
+				if ( ::_tcsicmp( cstr_t( p->buffer ), p->windowName ) == 0 )
 				{
 					dword pid;
 					::GetWindowThreadProcessId( hwnd, &pid );
@@ -787,6 +787,45 @@ namespace MyCpp
 				}
 			}
 
+			// Search recursively until you finish finding or enumerating.
+			::EnumChildWindows( hwnd, &EnumChildWindowsProc, lParam );
+
+			if ( p->hwnd != null )
+				return FALSE;
+
+			return TRUE;
+		}
+			
+		BOOL CALLBACK EnumWindowsProc(
+			HWND hwnd,      // 親ウィンドウのハンドル
+			LPARAM lParam   // アプリケーション定義の値
+		)
+		{
+			// First, search from the parent window
+			FINDWINDOWINFO* p = pointer_int_cast< FINDWINDOWINFO* >( lParam );
+
+			GetWindowClassName( hwnd, p->buffer );
+			if ( ::_tcsicmp( cstr_t( p->buffer ), p->className ) == 0 )
+			{
+				GetWindowName( hwnd, p->buffer );
+				if ( ::_tcsicmp( cstr_t( p->buffer ), p->windowName ) == 0 )
+				{
+					dword pid;
+					::GetWindowThreadProcessId( hwnd, &pid );
+					if ( pid == p->pid )
+					{
+						p->hwnd = hwnd;
+						return FALSE;
+					}
+				}
+			}
+
+			// If not found, also look for child windows.
+			::EnumChildWindows( hwnd, &EnumChildWindowsProc, lParam );
+
+			if ( p->hwnd != null )
+				return FALSE;
+
 			return TRUE;
 		}
 	}
@@ -796,10 +835,16 @@ namespace MyCpp
 		if ( !process )
 			return null;
 
-		vchar_t buffer( 256 );
-		FINDWINDOWINFO fwi = { null, process->GetId(), wndClassName.c_str(), wndName.c_str(), &buffer };
+		FINDWINDOWINFO fwi =
+		{
+			null,
+			process->GetId(),
+			wndClassName.c_str(),
+			wndName.c_str(),
+			std::move( vchar_t( FINDWINDOWINFO::BUFFER_SIZE ) )
+		};
 
-		::EnumWindows( EnumWindowsProc, pointer_int_cast< LPARAM >( &fwi ) );
+		::EnumWindows( &EnumWindowsProc, pointer_int_cast< LPARAM >( &fwi ) );
 
 		return fwi.hwnd;
 	}
