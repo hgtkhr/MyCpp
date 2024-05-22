@@ -184,6 +184,7 @@
       <PreprocessorDefinitions>MYCPP_DEBUG=1;_DEBUG;WIN32;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <PreBuildEvent />
     <PostBuildEvent>
@@ -202,6 +203,7 @@
       <PreprocessorDefinitions>MYCPP_DEBUG=1;_DEBUG;WIN32;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <PreBuildEvent />
     <PostBuildEvent>
@@ -220,6 +222,7 @@
       <PreprocessorDefinitions>MYCPP_DEBUG=1;_DEBUG;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <PreBuildEvent />
     <PostBuildEvent />
@@ -239,6 +242,7 @@
       <PreprocessorDefinitions>MYCPP_DEBUG=1;_DEBUG;MYCPP_NOAUTOLINKLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <PreBuildEvent />
     <PostBuildEvent />
