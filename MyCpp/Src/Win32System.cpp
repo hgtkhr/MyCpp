@@ -151,29 +151,34 @@ namespace MyCpp
 			return size;
 		} );
 
-		vchar_t exeFileName( MAX_PATH );
 		string_t searchExeName = to_string_t( fileName );
 
-		for ( dword i = 0; i < maxIndex; ++i )
+		if ( fileName.has_parent_path() )
 		{
-			if ( HANDLE p = ::OpenProcess( accessMode | PROCESS_GET_INFO, ( inheritHandle ) ? TRUE : FALSE, pids[i] ) )
+			for ( dword i = 0; i < maxIndex; ++i )
 			{
-				scoped_generic_handle process( p );
-
-				adaptive_load( exeFileName, exeFileName.size(),
-					[&] ( char_t* s, std::size_t n )
+				if ( HANDLE p = ::OpenProcess( accessMode | PROCESS_GET_INFO, ( inheritHandle ) ? TRUE : FALSE, pids[i] ) )
 				{
-					dword size = numeric_cast< dword >( n );
-					if ( ::QueryFullProcessImageName( process.get(), 0, s, &size ) )
-						return size + 1;
-
-					return 0UL;
-				} );
-
-				if ( ::_tcsicmp( cstr_t( exeFileName ), searchExeName.c_str() ) == 0 )
-					return GetProcess( process.release() );
+					auto process = GetProcess( p );
+					string_t exeFilePath = to_string_t( process->GetFileName() );
+					if ( ::_tcsicmp( exeFilePath.c_str(), searchExeName.c_str()) == 0 )
+						return std::move( process );
+				}
 			}
 		}
+		else
+		{
+			for ( dword i = 0; i < maxIndex; ++i )
+			{
+				if ( HANDLE p = ::OpenProcess( accessMode | PROCESS_GET_INFO, ( inheritHandle ) ? TRUE : FALSE, pids[i] ) )
+				{
+					auto process = GetProcess( p );
+					if ( ::_tcsicmp( process->GetName().c_str(), searchExeName.c_str() ) == 0 )
+						return std::move( process );
+				}
+			}
+		}
+
 
 		return null;
 	}
@@ -579,31 +584,6 @@ namespace MyCpp
 		return null;
 	}
 
-	namespace
-	{
-		path_t ComplatePath( const path_t& p )
-		{
-			if ( p.is_absolute() )
-				return p;
-
-			if ( p.has_parent_path() )
-				return std::filesystem::weakly_canonical( p );
-
-			string_t pstr = to_string_t( p );
-			vchar_t szSearchPath( MAX_PATH );
-
-			adaptive_load( szSearchPath, szSearchPath.size(), [&pstr] (LPTSTR s, std::size_t n)
-			{
-				return ::SearchPath( null, pstr.c_str(), null, numeric_cast< dword >( n ), s, null );
-			} );
-
-			if ( _tcslen( cstr_t( szSearchPath ) ) == 0 )
-				return std::filesystem::weakly_canonical( p );
-
-			return std::filesystem::weakly_canonical( szSearchPath.data() );
-		}
-	}
-
 	path_t FindFilePath( const string_t& filename, const string_t& ext )
 	{
 		vchar_t szSearchPath( MAX_PATH );
@@ -614,6 +594,36 @@ namespace MyCpp
 		} );
 
 		return szSearchPath.data();
+	}
+
+	namespace
+	{
+		path_t ComplatePath( const path_t& p )
+		{
+			path_t filePath = p;
+
+			if ( filePath.is_absolute() )
+				return filePath;
+
+			if ( filePath.has_parent_path() )
+				return std::filesystem::weakly_canonical( filePath );
+
+			if ( !filePath.has_extension() )
+				filePath.replace_extension( _T( ".exe" ) );
+
+			string_t pstr = to_string_t( p );
+			vchar_t szSearchPath( MAX_PATH );
+
+			adaptive_load( szSearchPath, szSearchPath.size(), [&pstr] ( LPTSTR s, std::size_t n )
+			{
+				return ::SearchPath( null, pstr.c_str(), null, numeric_cast< dword >( n ), s, null );
+			} );
+
+			if ( _tcslen( cstr_t( szSearchPath ) ) == 0 )
+				return std::filesystem::weakly_canonical( p );
+
+			return std::filesystem::weakly_canonical( szSearchPath.data() );
+		}
 	}
 
 	processptr_t StartProcess( const string_t& cmdline, const path_t& appCurrentDir, void* envVariables, int creationFlags, bool inheritHandle,  int cmdShow )
@@ -769,17 +779,17 @@ namespace MyCpp
 			LPARAM lParam   // アプリケーション定義の値
 		)
 		{
+			dword pid;
 			FINDWINDOWINFO* p = pointer_int_cast< FINDWINDOWINFO* >( lParam );
 
-			GetWindowClassName( hwnd, p->buffer );
-			if ( ::_tcsicmp( cstr_t( p->buffer ), p->className ) == 0 )
+			::GetWindowThreadProcessId( hwnd, &pid );
+			if ( pid == p->pid )
 			{
-				GetWindowName( hwnd, p->buffer );
-				if ( ::_tcsicmp( cstr_t( p->buffer ), p->windowName ) == 0 )
+				GetWindowClassName( hwnd, p->buffer );
+				if ( ::_tcsicmp( cstr_t( p->buffer ), p->className ) == 0 )
 				{
-					dword pid;
-					::GetWindowThreadProcessId( hwnd, &pid );
-					if ( pid == p->pid )
+					GetWindowName( hwnd, p->buffer );
+					if ( ::_tcsicmp( cstr_t( p->buffer ), p->windowName ) == 0 )
 					{
 						p->hwnd = hwnd;
 						return FALSE;
@@ -801,18 +811,18 @@ namespace MyCpp
 			LPARAM lParam   // アプリケーション定義の値
 		)
 		{
-			// First, search from the parent window
+			dword pid;
 			FINDWINDOWINFO* p = pointer_int_cast< FINDWINDOWINFO* >( lParam );
 
-			GetWindowClassName( hwnd, p->buffer );
-			if ( ::_tcsicmp( cstr_t( p->buffer ), p->className ) == 0 )
+			// First, search from the parent window
+			::GetWindowThreadProcessId( hwnd, &pid );
+			if ( pid == p->pid )
 			{
-				GetWindowName( hwnd, p->buffer );
-				if ( ::_tcsicmp( cstr_t( p->buffer ), p->windowName ) == 0 )
+				GetWindowClassName( hwnd, p->buffer );
+				if ( ::_tcsicmp( cstr_t( p->buffer ), p->className ) == 0 )
 				{
-					dword pid;
-					::GetWindowThreadProcessId( hwnd, &pid );
-					if ( pid == p->pid )
+					GetWindowName( hwnd, p->buffer );
+					if ( ::_tcsicmp( cstr_t( p->buffer ), p->windowName ) == 0 )
 					{
 						p->hwnd = hwnd;
 						return FALSE;
