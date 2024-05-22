@@ -131,13 +131,43 @@ namespace MyCpp
 		return null;
 	}
 
+	namespace
+	{
+		inline path_t ComplatePath( const path_t& p )
+		{
+			path_t filePath = p;
+
+			if ( filePath.is_absolute() )
+				return filePath;
+
+			if ( filePath.has_parent_path() )
+				return std::filesystem::weakly_canonical( filePath );
+
+			if ( !filePath.has_extension() )
+				filePath.replace_extension( _T( ".exe" ) );
+
+			string_t pstr = to_string_t( p );
+			vchar_t szSearchPath( MAX_PATH );
+
+			adaptive_load( szSearchPath, szSearchPath.size(), [&pstr] ( LPTSTR s, std::size_t n )
+			{
+				return ::SearchPath( null, pstr.c_str(), null, numeric_cast< dword >( n ), s, null );
+			} );
+
+			if ( _tcslen( cstr_t( szSearchPath ) ) == 0 )
+				return std::filesystem::weakly_canonical( p );
+
+			return std::filesystem::weakly_canonical( szSearchPath.data() );
+		}
+	}
+
 	processptr_t OpenProcessByFileName( const path_t& fileName, bool inheritHandle, dword accessMode )
 	{
 		dword maxIndex = 0;
 		std::vector< dword > pids( 400 );
 
 		adaptive_load( pids, pids.size(),
-			[&] ( dword* pn, std::size_t n )
+			[&maxIndex] ( dword* pn, std::size_t n )
 		{
 			dword size;
 
@@ -151,10 +181,10 @@ namespace MyCpp
 			return size;
 		} );
 
-		string_t searchExeName = to_string_t( fileName );
-
 		if ( fileName.has_parent_path() )
 		{
+			path_t exeFilePath = ComplatePath( fileName );
+			string_t searchExeName = to_string_t( exeFilePath );
 			for ( dword i = 0; i < maxIndex; ++i )
 			{
 				if ( HANDLE p = ::OpenProcess( accessMode | PROCESS_GET_INFO, ( inheritHandle ) ? TRUE : FALSE, pids[i] ) )
@@ -168,6 +198,7 @@ namespace MyCpp
 		}
 		else
 		{
+			string_t searchExeName = to_string_t( fileName );
 			for ( dword i = 0; i < maxIndex; ++i )
 			{
 				if ( HANDLE p = ::OpenProcess( accessMode | PROCESS_GET_INFO, ( inheritHandle ) ? TRUE : FALSE, pids[i] ) )
@@ -472,7 +503,7 @@ namespace MyCpp
 
 	namespace
 	{
-		void SuspendProcess( dword processId, bool suspend )
+		inline void SuspendProcess( dword processId, bool suspend )
 		{
 			scoped_generic_handle snapshot( ::CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, processId ) );
 
@@ -594,36 +625,6 @@ namespace MyCpp
 		} );
 
 		return szSearchPath.data();
-	}
-
-	namespace
-	{
-		path_t ComplatePath( const path_t& p )
-		{
-			path_t filePath = p;
-
-			if ( filePath.is_absolute() )
-				return filePath;
-
-			if ( filePath.has_parent_path() )
-				return std::filesystem::weakly_canonical( filePath );
-
-			if ( !filePath.has_extension() )
-				filePath.replace_extension( _T( ".exe" ) );
-
-			string_t pstr = to_string_t( p );
-			vchar_t szSearchPath( MAX_PATH );
-
-			adaptive_load( szSearchPath, szSearchPath.size(), [&pstr] ( LPTSTR s, std::size_t n )
-			{
-				return ::SearchPath( null, pstr.c_str(), null, numeric_cast< dword >( n ), s, null );
-			} );
-
-			if ( _tcslen( cstr_t( szSearchPath ) ) == 0 )
-				return std::filesystem::weakly_canonical( p );
-
-			return std::filesystem::weakly_canonical( szSearchPath.data() );
-		}
 	}
 
 	processptr_t StartProcess( const string_t& cmdline, const path_t& appCurrentDir, void* envVariables, int creationFlags, bool inheritHandle,  int cmdShow )
