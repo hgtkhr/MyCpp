@@ -189,6 +189,11 @@ namespace MyCpp
 	class Window
 	{
 	public:
+		typedef WPARAM wparam_t;
+		typedef LPARAM lparam_t;
+		typedef LRESULT lresult_t;
+		typedef DWORD_PTR dword_ptr_t;
+
 		Window() = default;
 		Window( const Window& ) = default;
 		Window( Window&& ) = default;
@@ -210,10 +215,10 @@ namespace MyCpp
 
 		string_t ClassName() const;
 
-		longlong Send( uint msg, uint wparam, longlong lparam );
-		qword SendTimeout( uint msg, uint wparam, longlong lparam, uint flags, uint milliseconds );
+		lresult_t Send( uint msg, wparam_t wparam, lparam_t lparam );
+		dword_ptr_t SendTimeout( uint msg, wparam_t wparam, lparam_t lparam, uint flags, uint milliseconds );
 
-		longlong Post( uint msg, uint wparam, longlong lparam );
+		lresult_t Post( uint msg, wparam_t wparam, lparam_t lparam );
 
 		void Close();
 

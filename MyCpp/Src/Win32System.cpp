@@ -879,21 +879,21 @@ namespace MyCpp
 		return cstr_t( buffer );
 	}
 
-	longlong Window::Send( uint msg, uint wparam, longlong lparam )
+	Window::lresult_t Window::Send( uint msg, wparam_t wparam, lparam_t lparam )
 	{
 		return ::SendMessage( m_hwnd, msg, wparam, lparam );
 	}
 
-	qword Window::SendTimeout( uint msg, uint wparam, longlong lparam, uint flags, uint milliseconds )
+	Window::dword_ptr_t Window::SendTimeout( uint msg, wparam_t wparam, lparam_t lparam, uint flags, uint milliseconds )
 	{
-		qword result = 0;
+		dword_ptr_t result = 0;
 
 		::SendMessageTimeout( m_hwnd, msg, wparam, lparam, flags, milliseconds, &result );
 
 		return result;
 	}
 
-	longlong Window::Post( uint msg, uint wparam, longlong lparam )
+	Window::lresult_t Window::Post( uint msg, wparam_t wparam, lparam_t lparam )
 	{
 		return ::PostMessage( m_hwnd, msg, wparam, lparam );
 	}
