@@ -878,6 +878,11 @@ namespace MyCpp
 		return ::SendMessage( m_hwnd, msg, wparam, lparam );
 	}
 
+	Window::lresult_t Window::SendNotify( uint msg, wparam_t wparam, lparam_t lparam )
+	{
+		return ::SendNotifyMessage( m_hwnd, msg, wparam, lparam );
+	}
+
 	Window::dword_ptr_t Window::SendTimeout( uint msg, wparam_t wparam, lparam_t lparam, uint flags, uint milliseconds )
 	{
 		dword_ptr_t result = 0;
@@ -890,6 +895,11 @@ namespace MyCpp
 	Window::lresult_t Window::Post( uint msg, wparam_t wparam, lparam_t lparam )
 	{
 		return ::PostMessage( m_hwnd, msg, wparam, lparam );
+	}
+
+	Window Window::GetParent() const
+	{
+		return ::GetParent( m_hwnd );
 	}
 
 	void Window::Close()

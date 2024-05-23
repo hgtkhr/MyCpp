@@ -216,9 +216,11 @@ namespace MyCpp
 		string_t ClassName() const;
 
 		lresult_t Send( uint msg, wparam_t wparam, lparam_t lparam );
+		lresult_t SendNotify( uint msg, wparam_t wparam, lparam_t lparam );
 		dword_ptr_t SendTimeout( uint msg, wparam_t wparam, lparam_t lparam, uint flags, uint milliseconds );
-
 		lresult_t Post( uint msg, wparam_t wparam, lparam_t lparam );
+
+		Window GetParent() const;
 
 		void Close();
 
