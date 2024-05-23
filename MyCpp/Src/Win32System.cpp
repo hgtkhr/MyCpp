@@ -92,7 +92,7 @@ namespace MyCpp
 		{
 			dword bytes;
 
-			auto processToken = make_scoped_handle< HANDLE >( token );
+			scoped_generic_handle processToken = make_scoped_handle< HANDLE >( token );
 			::GetTokenInformation( processToken.get(), TokenUser, null, 0, &bytes );
 
 			auto tokenUser = make_scoped_local_memory< TOKEN_USER >( LPTR, bytes );
@@ -106,7 +106,7 @@ namespace MyCpp
 					::CopySid( sidLength, sid.get(), tokenUser->User.Sid );
 
 					if ( ::IsValidSid( sid.get() ) )
-						return { sid.release(), local_memory_deleter< SID >() };
+						return std::move( sidptr_t( sid.release(), local_memory_deleter< SID >() ) );
 				}
 			}
 		}
@@ -190,7 +190,7 @@ namespace MyCpp
 			{
 				if ( HANDLE p = ::OpenProcess( accessMode | PROCESS_GET_INFO, ( inheritHandle ) ? TRUE : FALSE, pids[i] ) )
 				{
-					auto process = GetProcess( p );
+					processptr_t process = GetProcess( p );
 					string_t exeFilePath = to_string_t( process->GetFileName() );
 					if ( ::_tcsicmp( exeFilePath.c_str(), searchExeName.c_str()) == 0 )
 						return std::move( process );
@@ -204,7 +204,7 @@ namespace MyCpp
 			{
 				if ( HANDLE p = ::OpenProcess( accessMode | PROCESS_GET_INFO, ( inheritHandle ) ? TRUE : FALSE, pids[i] ) )
 				{
-					auto process = GetProcess( p );
+					processptr_t process = GetProcess( p );
 					if ( ::_tcsicmp( process->GetName().c_str(), searchExeName.c_str() ) == 0 )
 						return std::move( process );
 				}
@@ -328,7 +328,7 @@ namespace MyCpp
 		else
 			::InitializeCriticalSectionEx( newCriticalSection, spinCount, CRITICAL_SECTION_NO_DEBUG_INFO );
 
-		return { newCriticalSection, CriticalSectionDeleter() };
+		return std::move( csptr_t( newCriticalSection, CriticalSectionDeleter() ) );
 	}
 
 	class Process::Data
@@ -757,23 +757,23 @@ namespace MyCpp
 			vchar_t buffer;
 		};
 
-		inline std::size_t GetWindowClassName( HWND hwnd, vchar_t& name )
+		inline std::size_t GetWindowClassName( HWND hwnd, vchar_t& buffer )
 		{
-			return adaptive_load( name, name.size(),
+			return adaptive_load( buffer, buffer.size(),
 				[&] ( LPTSTR s, std::size_t n )
 			{
 				return ::GetClassName( hwnd, s, numeric_cast< int >( n ) );
 			} );
 		}
 
-		inline std::size_t GetWindowName( HWND hwnd, vchar_t& name )
+		inline std::size_t GetWindowName( HWND hwnd, vchar_t& buffer )
 		{
 			std::size_t size = ::GetWindowTextLength( hwnd ) + 1;
 
-			if ( name.size() < size )
-				name.resize( size );
+			if ( buffer.size() < size )
+				buffer.resize( size );
 
-			return ::GetWindowText( hwnd, cstr_t( name ), numeric_cast< int >( name.size() ) );
+			return ::GetWindowText( hwnd, cstr_t( buffer ), numeric_cast< int >( buffer.size() ) );
 		}
 
 		BOOL CALLBACK EnumChildWindowsProc(
@@ -842,7 +842,69 @@ namespace MyCpp
 		}
 	}
 
-	HWND FindProcessWindow( const processptr_t& process, const string_t& wndClassName, const string_t& wndName )
+	Window::Window( HWND hwnd )
+		: m_hwnd( hwnd )
+	{}
+
+	Window& Window::operator = ( HWND hwnd )
+	{
+		m_hwnd = hwnd;
+		return *this;
+	}
+
+	string_t Window::Text() const
+	{
+		vchar_t buffer;
+
+		GetWindowName( m_hwnd, buffer );
+
+		return cstr_t( buffer );
+	}
+
+	string_t Window::Text( const string_t& text )
+	{
+		string_t old = this->Text();
+
+		::SetWindowText( m_hwnd, text.c_str() );
+
+		return old;
+	}
+
+	string_t Window::ClassName() const
+	{
+		vchar_t buffer;
+
+		GetWindowClassName( m_hwnd, buffer );
+
+		return cstr_t( buffer );
+	}
+
+	longlong Window::Send( uint msg, uint wparam, longlong lparam )
+	{
+		return ::SendMessage( m_hwnd, msg, wparam, lparam );
+	}
+
+	qword Window::SendTimeout( uint msg, uint wparam, longlong lparam, uint flags, uint milliseconds )
+	{
+		qword result = 0;
+
+		::SendMessageTimeout( m_hwnd, msg, wparam, lparam, flags, milliseconds, &result );
+
+		return result;
+	}
+
+	longlong Window::Post( uint msg, uint wparam, longlong lparam )
+	{
+		return ::PostMessage( m_hwnd, msg, wparam, lparam );
+	}
+
+	void Window::Close()
+	{
+		if ( ::IsWindow( m_hwnd ) != FALSE )
+			this->Send( WM_CLOSE, 0, 0 );
+	}
+
+	Window FindProcessWindow( const processptr_t& process, const string_t& wndClassName, const string_t& wndName )
 	{
 		if ( !process )
 			return null;
@@ -857,7 +919,7 @@ namespace MyCpp
 		};
 
 		::EnumWindows( &EnumWindowsProc, pointer_int_cast< LPARAM >( &fwi ) );
-
+		
 		return fwi.hwnd;
 	}
 

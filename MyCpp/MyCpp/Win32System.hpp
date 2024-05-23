@@ -186,7 +186,46 @@ namespace MyCpp
 		return GetProcessSid( process->GetHandle() );
 	}
 
-	HWND FindProcessWindow( const processptr_t& process, const string_t& wndClassName, const string_t& wndName );
+	class Window
+	{
+	public:
+		Window() = default;
+		Window( const Window& ) = default;
+		Window( Window&& ) = default;
+		Window( HWND hwnd );
+
+		~Window() = default;
+
+		Window& operator = ( const Window& ) = default;
+		Window& operator = ( Window&& ) = default;
+		Window& operator = ( HWND hwnd );
+
+		operator HWND () const
+		{
+			return GetHandle();
+		}
+
+		string_t Text() const;
+		string_t Text( const string_t& text);
+
+		string_t ClassName() const;
+
+		longlong Send( uint msg, uint wparam, longlong lparam );
+		qword SendTimeout( uint msg, uint wparam, longlong lparam, uint flags, uint milliseconds );
+
+		longlong Post( uint msg, uint wparam, longlong lparam );
+
+		void Close();
+
+		HWND GetHandle() const
+		{
+			return m_hwnd;
+		}
+	private:
+		HWND m_hwnd = null;
+	};
+
+	Window FindProcessWindow( const processptr_t& process, const string_t& wndClassName, const string_t& wndName );
 
 	processptr_t GetProcess( dword pid );
 	processptr_t GetProcess( HANDLE hProcess );
