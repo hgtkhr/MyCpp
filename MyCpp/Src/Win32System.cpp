@@ -31,7 +31,7 @@ namespace MyCpp
 		vchar_t buffer( MAX_PATH );
 
 		adaptive_load( buffer, buffer.size(),
-			[&hmodule] ( LPTSTR buffer, std::size_t n )
+			[&hmodule] ( char_t* buffer, std::size_t n )
 		{
 			return ::GetModuleFileName( hmodule, buffer, numeric_cast< dword >( n ) );
 		} );
@@ -49,7 +49,7 @@ namespace MyCpp
 		vchar_t buffer( MAX_PATH );
 
 		adaptive_load( buffer, buffer.size(),
-			[] ( LPTSTR buffer, std::size_t n )
+			[] ( char_t* buffer, std::size_t n )
 		{
 			return ::GetTempPath( numeric_cast< dword >( n ), buffer );
 		} );
@@ -72,10 +72,9 @@ namespace MyCpp
 		vwchar guidStr( 40 );
 
 		adaptive_load( guidStr, guidStr.size(),
-			[&guid] ( LPWSTR buffer, std::size_t n )
+			[&guid] ( wchar_t* buffer, std::size_t n )
 		{
 			int r = ::StringFromGUID2( guid, buffer, numeric_cast< int >( n ) );
-
 			return ( r > 0 ) ? r : n;
 		} );
 
@@ -92,7 +91,7 @@ namespace MyCpp
 		{
 			dword bytes;
 
-			scoped_generic_handle processToken = make_scoped_handle< HANDLE >( token );
+			auto processToken = make_scoped_handle( token );
 			::GetTokenInformation( processToken.get(), TokenUser, null, 0, &bytes );
 
 			auto tokenUser = make_scoped_local_memory< TOKEN_USER >( LPTR, bytes );
@@ -100,7 +99,7 @@ namespace MyCpp
 			{
 				if ( ::IsValidSid( tokenUser->User.Sid ) )
 				{
-					dword sidLength = ::GetLengthSid( tokenUser->User.Sid );
+					auto sidLength = ::GetLengthSid( tokenUser->User.Sid );
 					auto sid = make_scoped_local_memory< SID >( LPTR, sidLength );
 
 					::CopySid( sidLength, sid.get(), tokenUser->User.Sid );
@@ -118,12 +117,12 @@ namespace MyCpp
 
 	processptr_t OpenCuProcessByFileName( const path_t& fileName, bool inheritHandle, dword accessMode )
 	{
-		processptr_t process = OpenProcessByFileName( fileName, inheritHandle, accessMode );
+		auto process = OpenProcessByFileName( fileName, inheritHandle, accessMode );
 
 		if ( process )
 		{
-			sidptr_t current( GetProcessSid( ::GetCurrentProcess() ) );
-			sidptr_t target( GetProcessSid( process->GetHandle() ) );
+			auto current = GetProcessSid( ::GetCurrentProcess() );
+			auto target = GetProcessSid( process->GetHandle() );
 
 			if ( ::EqualSid( current.get(), target.get() ) )
 				return process;
@@ -150,7 +149,8 @@ namespace MyCpp
 			string_t pstr = to_string_t( p );
 			vchar_t szSearchPath( MAX_PATH );
 
-			adaptive_load( szSearchPath, szSearchPath.size(), [&pstr] ( LPTSTR s, std::size_t n )
+			adaptive_load( szSearchPath, szSearchPath.size(), 
+				[&pstr] ( char_t* s, std::size_t n )
 			{
 				return ::SearchPath( null, pstr.c_str(), null, numeric_cast< dword >( n ), s, null );
 			} );
@@ -171,14 +171,10 @@ namespace MyCpp
 			[&maxIndex] ( dword* pn, std::size_t n )
 		{
 			dword size;
-
 			::EnumProcesses( pn, numeric_cast< dword >( n * sizeof( dword ) ), &size );
-
 			size /= sizeof( dword );
-
 			if ( size < n )
 				maxIndex = size;
-
 			return size;
 		} );
 
@@ -190,7 +186,7 @@ namespace MyCpp
 			{
 				if ( HANDLE p = ::OpenProcess( accessMode | PROCESS_GET_INFO, ( inheritHandle ) ? TRUE : FALSE, pids[i] ) )
 				{
-					processptr_t process = GetProcess( p );
+					auto process = GetProcess( p );
 					string_t exeFilePath = to_string_t( process->GetFileName() );
 					if ( ::_tcsicmp( exeFilePath.c_str(), searchExeName.c_str()) == 0 )
 						return std::move( process );
@@ -204,7 +200,7 @@ namespace MyCpp
 			{
 				if ( HANDLE p = ::OpenProcess( accessMode | PROCESS_GET_INFO, ( inheritHandle ) ? TRUE : FALSE, pids[i] ) )
 				{
-					processptr_t process = GetProcess( p );
+					auto process = GetProcess( p );
 					if ( ::_tcsicmp( process->GetName().c_str(), searchExeName.c_str() ) == 0 )
 						return std::move( process );
 				}
@@ -269,7 +265,7 @@ namespace MyCpp
 		vchar_t result( MAX_PATH );
 
 		adaptive_load( result, result.size(),
-			[] ( LPTSTR buffer, std::size_t n )
+			[] ( char_t* buffer, std::size_t n )
 		{
 			return ::GetCurrentDirectory( numeric_cast< dword >( n ), buffer );
 		} );
@@ -321,7 +317,7 @@ namespace MyCpp
 
 	csptr_t CreateCriticalSection( uint spinCount )
 	{
-		LPCRITICAL_SECTION newCriticalSection = lcallocate< CRITICAL_SECTION >( LPTR, sizeof( CRITICAL_SECTION ) );
+		CRITICAL_SECTION* newCriticalSection = lcallocate< CRITICAL_SECTION >( LPTR, sizeof( CRITICAL_SECTION ) );
 
 		if constexpr ( MYCPP_DEBUG == 1 )
 			::InitializeCriticalSectionEx( newCriticalSection, spinCount, 0 );
@@ -357,7 +353,7 @@ namespace MyCpp
 	{
 		Process::Data::HANDLEID GetPrimaryThreadHandleId( dword processId )
 		{
-			scoped_generic_handle snapshot( ::CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, processId ) );
+			auto snapshot = make_scoped_handle( ::CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, processId ) );
 
 			if ( snapshot )
 			{
@@ -506,7 +502,7 @@ namespace MyCpp
 	{
 		inline void SuspendProcess( dword processId, bool suspend )
 		{
-			scoped_generic_handle snapshot( ::CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, processId ) );
+			auto snapshot = make_scoped_handle( ::CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, processId ) );
 
 			if ( snapshot )
 			{
@@ -517,7 +513,7 @@ namespace MyCpp
 				{
 					do
 					{
-						scoped_generic_handle thread( ::OpenThread( THREAD_SUSPEND_RESUME, FALSE, thinfo.th32ThreadID ) );
+						auto thread = make_scoped_handle( ::OpenThread( THREAD_SUSPEND_RESUME, FALSE, thinfo.th32ThreadID ) );
 						if ( thread )
 						{
 							if ( suspend )
@@ -558,11 +554,8 @@ namespace MyCpp
 			[] ( dword* pn, std::size_t n )
 		{
 			dword size;
-
 			::EnumProcesses( pn, numeric_cast< dword >( n * sizeof( dword ) ), &size );
-
 			size /= sizeof( dword );
-
 			return size;
 		} );
 
@@ -585,7 +578,7 @@ namespace MyCpp
 
 	processptr_t GetParentProcess()
 	{
-		scoped_generic_handle snapshot( ::CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 ) );
+		auto snapshot = make_scoped_handle( ::CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 ) );
 
 		if ( snapshot )
 		{
@@ -621,7 +614,7 @@ namespace MyCpp
 		vchar_t szSearchPath( MAX_PATH );
 
 		adaptive_load( szSearchPath, szSearchPath.size(), 
-			[&filename, &ext] ( LPTSTR s, std::size_t n )
+			[&filename, &ext] ( char_t* s, std::size_t n )
 		{
 			return ::SearchPath( null, filename.c_str(), ( !ext.empty() ) ? ext.c_str() : null, numeric_cast< dword >( n ), s, null );
 		} );
@@ -761,7 +754,7 @@ namespace MyCpp
 		inline std::size_t GetWindowClassName( HWND hwnd, vchar_t& buffer )
 		{
 			return adaptive_load( buffer, buffer.size(),
-				[&hwnd] ( LPTSTR s, std::size_t n )
+				[&hwnd] ( char_t* s, std::size_t n )
 			{
 				return ::GetClassName( hwnd, s, numeric_cast< int >( n ) );
 			} );
@@ -1021,13 +1014,11 @@ namespace MyCpp
 		{
 			dword size;
 			scoped_reg_handle regHandle( hk );
-
 			r = ::RegQueryValueEx( hk, valueName.c_str(), null, null, null, &size );
 			if ( r == ERROR_SUCCESS )
 			{
 				dword dataType;
 				std::vector< byte > buffer( size );
-
 				r = ::RegQueryValueEx( hk, valueName.c_str(), null, &dataType, buffer.data(), &size );
 				if ( r == ERROR_SUCCESS )
 				{
@@ -1066,7 +1057,6 @@ namespace MyCpp
 		if ( r == ERROR_SUCCESS )
 		{
 			scoped_reg_handle regHandle( hk );
-
 			r = ::RegSetValueEx( hk, valueName.c_str(), 0, REG_SZ, reinterpret_cast< const byte* >( value.c_str() ), numeric_cast< dword >( value.length() ) );
 			if ( r == ERROR_SUCCESS )
 				return ;
@@ -1084,7 +1074,6 @@ namespace MyCpp
 		if ( r == ERROR_SUCCESS )
 		{
 			scoped_reg_handle regHandle( hk );
-
 			r = ::RegSetValueEx( hk, valueName.c_str(), 0, type, reinterpret_cast< const byte* >( ptr ), size );
 			if ( r == ERROR_SUCCESS )
 				return;
@@ -1098,7 +1087,7 @@ namespace MyCpp
 		vchar_t buffer( 512 );
 
 		adaptive_load( buffer, buffer.size(),
-			[&section, &name, &defaultValue, &file] ( LPTSTR s, std::size_t n ) 
+			[&section, &name, &defaultValue, &file] ( char_t* s, std::size_t n ) 
 		{
 			dword r = ::GetPrivateProfileString( section.c_str()
 												 , name.c_str()
