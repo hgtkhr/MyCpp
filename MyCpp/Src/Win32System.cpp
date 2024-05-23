@@ -31,7 +31,7 @@ namespace MyCpp
 		vchar_t buffer( MAX_PATH );
 
 		adaptive_load( buffer, buffer.size(),
-			[&] ( LPTSTR buffer, std::size_t n )
+			[&hmodule] ( LPTSTR buffer, std::size_t n )
 		{
 			return ::GetModuleFileName( hmodule, buffer, numeric_cast< dword >( n ) );
 		} );
@@ -49,7 +49,7 @@ namespace MyCpp
 		vchar_t buffer( MAX_PATH );
 
 		adaptive_load( buffer, buffer.size(),
-			[&] ( LPTSTR buffer, std::size_t n )
+			[] ( LPTSTR buffer, std::size_t n )
 		{
 			return ::GetTempPath( numeric_cast< dword >( n ), buffer );
 		} );
@@ -72,7 +72,7 @@ namespace MyCpp
 		vwchar guidStr( 40 );
 
 		adaptive_load( guidStr, guidStr.size(),
-			[&] ( LPWSTR buffer, std::size_t n )
+			[&guid] ( LPWSTR buffer, std::size_t n )
 		{
 			int r = ::StringFromGUID2( guid, buffer, numeric_cast< int >( n ) );
 
