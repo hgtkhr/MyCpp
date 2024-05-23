@@ -423,7 +423,7 @@ namespace MyCpp
 			vchar_t buffer( MAX_PATH );
 
 			adaptive_load( buffer, buffer.size(),
-				[&] ( char_t* s, std::size_t n )
+				[this] ( char_t* s, std::size_t n )
 			{
 				dword size = numeric_cast< dword >( n );
 				if ( ::QueryFullProcessImageName( m_process.first, 0, s, &size ) )
@@ -555,7 +555,7 @@ namespace MyCpp
 		std::vector< dword > pids( 200 );
 
 		adaptive_load( pids, pids.size(),
-			[&] ( dword* pn, std::size_t n )
+			[] ( dword* pn, std::size_t n )
 		{
 			dword size;
 
@@ -620,7 +620,8 @@ namespace MyCpp
 	{
 		vchar_t szSearchPath( MAX_PATH );
 
-		adaptive_load( szSearchPath, szSearchPath.size(), [&filename, &ext] ( LPTSTR s, std::size_t n )
+		adaptive_load( szSearchPath, szSearchPath.size(), 
+			[&filename, &ext] ( LPTSTR s, std::size_t n )
 		{
 			return ::SearchPath( null, filename.c_str(), ( !ext.empty() ) ? ext.c_str() : null, numeric_cast< dword >( n ), s, null );
 		} );
@@ -760,7 +761,7 @@ namespace MyCpp
 		inline std::size_t GetWindowClassName( HWND hwnd, vchar_t& buffer )
 		{
 			return adaptive_load( buffer, buffer.size(),
-				[&] ( LPTSTR s, std::size_t n )
+				[&hwnd] ( LPTSTR s, std::size_t n )
 			{
 				return ::GetClassName( hwnd, s, numeric_cast< int >( n ) );
 			} );
@@ -1097,7 +1098,7 @@ namespace MyCpp
 		vchar_t buffer( 512 );
 
 		adaptive_load( buffer, buffer.size(),
-			[&] ( LPTSTR s, std::size_t n ) 
+			[&section, &name, &defaultValue, &file] ( LPTSTR s, std::size_t n ) 
 		{
 			dword r = ::GetPrivateProfileString( section.c_str()
 												 , name.c_str()
