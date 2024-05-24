@@ -67,7 +67,7 @@ namespace MyCpp
 		return cstr_t( buffer );
 	}
 
-	string_t ToGuidString( const GUID& guid )
+	string_t ToGuidString( const guid_t& guid )
 	{
 		vwchar guidStr( 40 );
 
@@ -81,11 +81,9 @@ namespace MyCpp
 		return narrow_wide_string< string_t, std::wstring >( cstr_t( guidStr ) );
 	}
 
-	sidptr_t GetProcessSid( HANDLE process )
+	sidptr_t GetProcessSid( handle_t process )
 	{
-		typedef typename sidptr_t::element_type SID;
-
-		HANDLE token = null;
+		handle_t token = null;
 
 		if ( ::OpenProcessToken( process, TOKEN_QUERY, &token ) )
 		{
@@ -100,12 +98,12 @@ namespace MyCpp
 				if ( ::IsValidSid( tokenUser->User.Sid ) )
 				{
 					auto sidLength = ::GetLengthSid( tokenUser->User.Sid );
-					auto sid = make_scoped_local_memory< SID >( LPTR, sidLength );
+					auto sid = make_scoped_local_memory< sidptr_t::element_type >( LPTR, sidLength );
 
 					::CopySid( sidLength, sid.get(), tokenUser->User.Sid );
 
 					if ( ::IsValidSid( sid.get() ) )
-						return std::move( sidptr_t( sid.release(), local_memory_deleter< SID >() ) );
+						return std::move( sidptr_t( sid.release(), local_memory_deleter< sidptr_t::element_type >() ) );
 				}
 			}
 		}
@@ -172,9 +170,12 @@ namespace MyCpp
 		{
 			dword size;
 			::EnumProcesses( pn, numeric_cast< dword >( n * sizeof( dword ) ), &size );
+
 			size /= sizeof( dword );
+
 			if ( size < n )
 				maxIndex = size;
+
 			return size;
 		} );
 
@@ -184,7 +185,7 @@ namespace MyCpp
 			string_t searchExeName = to_string_t( exeFilePath );
 			for ( dword i = 0; i < maxIndex; ++i )
 			{
-				if ( HANDLE p = ::OpenProcess( accessMode | PROCESS_GET_INFO, ( inheritHandle ) ? TRUE : FALSE, pids[i] ) )
+				if ( handle_t p = ::OpenProcess( accessMode | PROCESS_GET_INFO, ( inheritHandle ) ? TRUE : FALSE, pids[i] ) )
 				{
 					auto process = GetProcess( p );
 					string_t exeFilePath = to_string_t( process->GetFileName() );
@@ -198,7 +199,7 @@ namespace MyCpp
 			string_t searchExeName = to_string_t( fileName );
 			for ( dword i = 0; i < maxIndex; ++i )
 			{
-				if ( HANDLE p = ::OpenProcess( accessMode | PROCESS_GET_INFO, ( inheritHandle ) ? TRUE : FALSE, pids[i] ) )
+				if ( handle_t p = ::OpenProcess( accessMode | PROCESS_GET_INFO, ( inheritHandle ) ? TRUE : FALSE, pids[i] ) )
 				{
 					auto process = GetProcess( p );
 					if ( ::_tcsicmp( process->GetName().c_str(), searchExeName.c_str() ) == 0 )
@@ -362,7 +363,7 @@ namespace MyCpp
 
 				if ( ::Thread32First( snapshot.get(), &thinfo ) )
 				{
-					HANDLE threadHandle = ::OpenThread( SYNCHRONIZE | THREAD_QUERY_INFORMATION, FALSE, thinfo.th32ThreadID );
+					handle_t threadHandle = ::OpenThread( SYNCHRONIZE | THREAD_QUERY_INFORMATION, FALSE, thinfo.th32ThreadID );
 					if ( threadHandle != null )
 						return std::make_pair( threadHandle, thinfo.th32ThreadID );
 				}
@@ -464,12 +465,12 @@ namespace MyCpp
 		return m_data->GetProcessFileName();
 	}
 
-	HANDLE Process::GetHandle() const
+	handle_t Process::GetHandle() const
 	{
 		return m_data->GetProcessData().first;
 	};
 
-	HANDLE Process::GetPrimaryThreadHandle() const
+	handle_t Process::GetPrimaryThreadHandle() const
 	{
 		return m_data->GetPrimaryThreadData().first;
 	}
@@ -555,14 +556,16 @@ namespace MyCpp
 		{
 			dword size;
 			::EnumProcesses( pn, numeric_cast< dword >( n * sizeof( dword ) ), &size );
+
 			size /= sizeof( dword );
+
 			return size;
 		} );
 
 		if ( std::find( pids.begin(), pids.end(), pid) == pids.end() )
 			return null;
 
-		HANDLE openedProcess = ::OpenProcess( PROCESS_GET_INFO, FALSE, pid );
+		handle_t openedProcess = ::OpenProcess( PROCESS_GET_INFO, FALSE, pid );
 		if ( openedProcess == null )
 			return null;
 
@@ -570,7 +573,7 @@ namespace MyCpp
 			std::move( Process::Data( { openedProcess, null, pid, 0 } ) ) );
 	}
 
-	processptr_t GetProcess( HANDLE hProcess )
+	processptr_t GetProcess( handle_t hProcess )
 	{
 		return std::make_shared< Process >( 
 			std::move( Process::Data( { hProcess, null, ::GetProcessId( hProcess ), 0 } ) ) );
@@ -593,7 +596,7 @@ namespace MyCpp
 				{
 					if ( processEntry.th32ProcessID == currentProcessId )
 					{
-						HANDLE process = ::OpenProcess( PROCESS_GET_INFO, FALSE, processEntry.th32ParentProcessID );
+						handle_t process = ::OpenProcess( PROCESS_GET_INFO, FALSE, processEntry.th32ParentProcessID );
 
 						if ( process == null )
 							return null;
@@ -745,7 +748,7 @@ namespace MyCpp
 		{
 			static constexpr std::size_t BUFFER_SIZE = 256;
 			HWND hwnd;
-			dword pid;
+			DWORD pid;
 			LPCTSTR className;
 			LPCTSTR windowName;
 			vchar_t buffer;
@@ -836,11 +839,11 @@ namespace MyCpp
 		}
 	}
 
-	Window::Window( HWND hwnd )
+	Window::Window( native_handle_t hwnd )
 		: m_hwnd( hwnd )
 	{}
 
-	Window& Window::operator = ( HWND hwnd )
+	Window& Window::operator = ( native_handle_t hwnd )
 	{
 		m_hwnd = hwnd;
 		return *this;
@@ -873,26 +876,26 @@ namespace MyCpp
 		return cstr_t( buffer );
 	}
 
-	Window::lresult_t Window::Send( uint msg, wparam_t wparam, lparam_t lparam )
+	ptrlong_t Window::Send( uint msg, ptrint_t wparam, ptrlong_t lparam )
 	{
 		return ::SendMessage( m_hwnd, msg, wparam, lparam );
 	}
 
-	Window::lresult_t Window::SendNotify( uint msg, wparam_t wparam, lparam_t lparam )
+	ptrlong_t Window::SendNotify( uint msg, ptrint_t wparam, ptrlong_t lparam )
 	{
 		return ::SendNotifyMessage( m_hwnd, msg, wparam, lparam );
 	}
 
-	Window::dword_ptr_t Window::SendTimeout( uint msg, wparam_t wparam, lparam_t lparam, uint flags, uint milliseconds )
+	ptrlong_t Window::SendTimeout( uint msg, ptrint_t wparam, ptrlong_t lparam, uint flags, uint milliseconds )
 	{
-		dword_ptr_t result = 0;
+		ptrlong_t result = 0;
 
 		::SendMessageTimeout( m_hwnd, msg, wparam, lparam, flags, milliseconds, &result );
 
 		return result;
 	}
 
-	Window::lresult_t Window::Post( uint msg, wparam_t wparam, lparam_t lparam )
+	ptrlong_t Window::Post( uint msg, ptrint_t wparam, ptrlong_t lparam )
 	{
 		return ::PostMessage( m_hwnd, msg, wparam, lparam );
 	}
@@ -935,9 +938,9 @@ namespace MyCpp
 		return &currentProcess;
 	}
 
-	uint GetRegBinary( HKEY parentKey, const string_t& subKey, const string_t& valueName, void* ptr, uint size )
+	uint GetRegBinary( hkey_t parentKey, const string_t& subKey, const string_t& valueName, void* ptr, uint size )
 	{
-		HKEY hk;
+		hkey_t hk;
 
 		LSTATUS r = ::RegOpenKeyEx( parentKey, subKey.c_str(), 0, KEY_READ, &hk );
 		if ( r == ERROR_SUCCESS )
@@ -979,9 +982,9 @@ namespace MyCpp
 	namespace
 	{
 		template < typename Xword, dword REGTYPE >
-		inline Xword GetRegXword( HKEY parentKey, const string_t& subKey, const string_t& valueName )
+		inline Xword GetRegXword( hkey_t parentKey, const string_t& subKey, const string_t& valueName )
 		{
-			HKEY hk;
+			hkey_t hk;
 
 			LSTATUS r = ::RegOpenKeyEx( parentKey, subKey.c_str(), 0, KEY_READ, &hk );
 			if ( r == ERROR_SUCCESS )
@@ -1005,24 +1008,24 @@ namespace MyCpp
 
 	}
 
-	dword GetRegDword( HKEY parentKey, const string_t& subKey, const string_t& valueName )
+	dword GetRegDword( hkey_t parentKey, const string_t& subKey, const string_t& valueName )
 	{
 		return GetRegXword< dword, REG_DWORD >( parentKey, subKey, valueName );
 	}
 
-	qword GetRegQword( HKEY parentKey, const string_t& subKey, const string_t& valueName )
+	qword GetRegQword( hkey_t parentKey, const string_t& subKey, const string_t& valueName )
 	{
 		return GetRegXword< qword, REG_QWORD >( parentKey, subKey, valueName );
 	}
 
-	string_t GetRegString( HKEY parentKey, const string_t& subKey, const string_t& valueName )
+	string_t GetRegString( hkey_t parentKey, const string_t& subKey, const string_t& valueName )
 	{
-		HKEY hk;
+		hkey_t hk;
 
 		LSTATUS r = ::RegOpenKeyEx( parentKey, subKey.c_str(), 0, KEY_READ, &hk );
 		if ( r == ERROR_SUCCESS )
 		{
-			dword size;
+			dword size = 0;
 			scoped_reg_handle regHandle( hk );
 			r = ::RegQueryValueEx( hk, valueName.c_str(), null, null, null, &size );
 			if ( r == ERROR_SUCCESS )
@@ -1058,9 +1061,9 @@ namespace MyCpp
 		return null;
 	}
 
-	void SetRegString( HKEY parentKey, const string_t& subKey, const string_t& valueName, const string_t& value )
+	void SetRegString( hkey_t parentKey, const string_t& subKey, const string_t& valueName, const string_t& value )
 	{
-		HKEY hk;
+		hkey_t hk;
 		dword disposition;
 
 		LSTATUS r = ::RegCreateKeyEx( parentKey, subKey.c_str(), 0, null, REG_OPTION_NON_VOLATILE, KEY_WRITE, null, &hk, &disposition );
@@ -1075,9 +1078,9 @@ namespace MyCpp
 		exception< std::runtime_error >( REGVALUE_ERROR( "SetRegString", subKey, valueName, r ) );
 	}
 
-	void SetRegBinary( HKEY parentKey, const string_t& subKey, const string_t& valueName, uint type, const void* ptr, uint size )
+	void SetRegBinary( hkey_t parentKey, const string_t& subKey, const string_t& valueName, uint type, const void* ptr, uint size )
 	{
-		HKEY hk;
+		hkey_t hk;
 		dword disposition;
 
 		LSTATUS r = ::RegCreateKeyEx( parentKey, subKey.c_str(), 0, null, REG_OPTION_NON_VOLATILE, KEY_WRITE, null, &hk, &disposition );

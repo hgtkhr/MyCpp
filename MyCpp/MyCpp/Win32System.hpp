@@ -7,6 +7,9 @@
 namespace MyCpp
 {
 	typedef std::filesystem::path path_t;
+	typedef UINT_PTR ptrint_t;
+	typedef DWORD_PTR ptrlong_t;
+	typedef GUID guid_t;
 
 	inline string_t to_string_t( const path_t& p )
 	{
@@ -37,7 +40,7 @@ namespace MyCpp
 
 		struct MutexDeleter
 		{
-			typedef HANDLE pointer;
+			typedef handle_t pointer;
 
 			void operator () ( pointer p )
 			{
@@ -95,7 +98,7 @@ namespace MyCpp
 
 	typedef std::shared_ptr< std::remove_pointer< PSID >::type > sidptr_t;
 
-	sidptr_t GetProcessSid( HANDLE process );
+	sidptr_t GetProcessSid( handle_t process );
 
 	path_t GetCurrentLocation();
 	path_t GetSpecialFolderLocation( const GUID& folderId );
@@ -103,14 +106,14 @@ namespace MyCpp
 	path_t GetTemporaryFileName( const string_t& prefix );
 	path_t FindFilePath( const string_t& filename, const string_t& ext = null );
 
-	string_t ToGuidString( const GUID& guid );
+	string_t ToGuidString( const guid_t& guid );
 
-	string_t GetRegString( HKEY parentKey, const string_t& subKey, const string_t& valueName );
-	uint GetRegBinary( HKEY parentKey, const string_t& subKey, const string_t& valueName, void* ptr, uint size );
-	dword GetRegDword( HKEY parentKey, const string_t& subKey, const string_t& valueName );
-	qword GetRegQword( HKEY parentKey, const string_t& subKey, const string_t& valueName );
-	void SetRegString( HKEY parentKey, const string_t& subKey, const string_t& valueName, const string_t& value );
-	void SetRegBinary( HKEY parentKey, const string_t& subKey, const string_t& valueName, uint type, const void* ptr, uint size );
+	string_t GetRegString( hkey_t parentKey, const string_t& subKey, const string_t& valueName );
+	uint GetRegBinary( hkey_t parentKey, const string_t& subKey, const string_t& valueName, void* ptr, uint size );
+	dword GetRegDword( hkey_t parentKey, const string_t& subKey, const string_t& valueName );
+	qword GetRegQword( hkey_t parentKey, const string_t& subKey, const string_t& valueName );
+	void SetRegString( hkey_t parentKey, const string_t& subKey, const string_t& valueName, const string_t& value );
+	void SetRegBinary( hkey_t parentKey, const string_t& subKey, const string_t& valueName, uint type, const void* ptr, uint size );
 
 	namespace Details
 	{
@@ -118,7 +121,7 @@ namespace MyCpp
 		template < typename Xword >
 		inline
 		std::enable_if_t< std::is_same_v< Xword, qword >, Xword >
-		GetRegXword( HKEY parentKey, const string_t& subKey, const string_t& valueName )
+		GetRegXword( hkey_t parentKey, const string_t& subKey, const string_t& valueName )
 		{
 			return GetRegDword( parentKey, subKey, valueName );
 		}
@@ -127,24 +130,24 @@ namespace MyCpp
 		template < typename Xword >
 		inline
 		std::enable_if_t< std::is_same_v< Xword, dword >, Xword >
-		GetRegXword( HKEY parentKey, const string_t& subKey, const string_t& valueName )
+		GetRegXword( hkey_t parentKey, const string_t& subKey, const string_t& valueName )
 		{
 			return GetRegQword( parentKey, subKey, valueName );
 		}
 	}
 
 	template < typename Xword >
-	inline Xword GetRegXword( HKEY parentKey, const string_t& subKey, const string_t& valueName )
+	inline Xword GetRegXword( hkey_t parentKey, const string_t& subKey, const string_t& valueName )
 	{
 		return Details::GetRegXword< Xword >( parentKey, subKey, valueName );
 	}
 
-	inline void SetRegXword( HKEY parentKey, const string_t& subKey, const string_t& valueName, dword value )
+	inline void SetRegXword( hkey_t parentKey, const string_t& subKey, const string_t& valueName, dword value )
 	{
 		SetRegBinary( parentKey, subKey, valueName, REG_DWORD, &value, sizeof( dword ) );
 	}
 
-	inline void SetRegXword( HKEY parentKey, const string_t& subKey, const string_t& valueName, qword value )
+	inline void SetRegXword( hkey_t parentKey, const string_t& subKey, const string_t& valueName, qword value )
 	{
 		SetRegBinary( parentKey, subKey, valueName, REG_QWORD, &value, sizeof( qword ) );
 	}
@@ -164,8 +167,8 @@ namespace MyCpp
 
 		string_t GetName() const;
 		path_t GetFileName() const;
-		HANDLE GetHandle() const;
-		HANDLE GetPrimaryThreadHandle() const;
+		handle_t GetHandle() const;
+		handle_t GetPrimaryThreadHandle() const;
 		dword GetId() const;
 		dword GetPrimaryThreadId() const;
 		dword GetExitCode() const;
@@ -189,23 +192,20 @@ namespace MyCpp
 	class Window
 	{
 	public:
-		typedef WPARAM wparam_t;
-		typedef LPARAM lparam_t;
-		typedef LRESULT lresult_t;
-		typedef DWORD_PTR dword_ptr_t;
+		typedef HWND native_handle_t;
 
 		Window() = default;
 		Window( const Window& ) = default;
 		Window( Window&& ) = default;
-		Window( HWND hwnd );
+		Window( native_handle_t hwnd );
 
 		~Window() = default;
 
 		Window& operator = ( const Window& ) = default;
 		Window& operator = ( Window&& ) = default;
-		Window& operator = ( HWND hwnd );
+		Window& operator = ( native_handle_t hwnd );
 
-		operator HWND () const
+		operator native_handle_t () const
 		{
 			return GetHandle();
 		}
@@ -215,27 +215,27 @@ namespace MyCpp
 
 		string_t ClassName() const;
 
-		lresult_t Send( uint msg, wparam_t wparam, lparam_t lparam );
-		lresult_t SendNotify( uint msg, wparam_t wparam, lparam_t lparam );
-		dword_ptr_t SendTimeout( uint msg, wparam_t wparam, lparam_t lparam, uint flags, uint milliseconds );
-		lresult_t Post( uint msg, wparam_t wparam, lparam_t lparam );
+		ptrlong_t Send( uint msg, ptrint_t wparam, ptrlong_t lparam );
+		ptrlong_t SendNotify( uint msg, ptrint_t wparam, ptrlong_t lparam );
+		ptrlong_t SendTimeout( uint msg, ptrint_t wparam, ptrlong_t lparam, uint flags, uint milliseconds );
+		ptrlong_t Post( uint msg, ptrint_t wparam, ptrlong_t lparam );
 
 		Window GetParent() const;
 
 		void Close();
 
-		HWND GetHandle() const
+		native_handle_t GetHandle() const
 		{
 			return m_hwnd;
 		}
 	private:
-		HWND m_hwnd = null;
+		native_handle_t m_hwnd = null;
 	};
 
 	Window FindProcessWindow( const processptr_t& process, const string_t& wndClassName, const string_t& wndName );
 
 	processptr_t GetProcess( dword pid );
-	processptr_t GetProcess( HANDLE hProcess );
+	processptr_t GetProcess( handle_t hProcess );
 	processptr_t GetParentProcess();
 
 	const Process* GetCurrentProcess();
@@ -404,6 +404,8 @@ namespace MyCpp
 
 #if defined( MYCPP_GLOBALTYPEDES )
 using MyCpp::path_t;
+using MyCpp::ptrint_t;
+using MyCpp::ptrlong_t;
 using MyCpp::mutex_t;
 using MyCpp::csptr_t;
 using MyCpp::cslock_t;

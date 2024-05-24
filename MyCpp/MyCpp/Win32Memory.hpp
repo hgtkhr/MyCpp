@@ -37,11 +37,13 @@ namespace MyCpp
 		}
 	};
 
+	typedef HANDLE heaphadle_t;
+
 	namespace Details
 	{
 		struct heapmem_header
 		{
-			HANDLE hHeap;
+			heaphadle_t hHeap;
 			byte data[1];
 		};
 
@@ -62,7 +64,7 @@ namespace MyCpp
 			if ( p != null )
 			{
 				Details::heapmem_header* hdr = Details::GetHeapMemoryHeader( p );
-				HANDLE hHeap = hdr->hHeap;
+				heaphadle_t hHeap = hdr->hHeap;
 
 				::HeapFree( hHeap, 0, hdr );
 
@@ -102,7 +104,7 @@ namespace MyCpp
 	}
 
 	template < typename T >
-	inline T* hpallocate( dword flags, std::size_t size, HANDLE hheap = ::GetProcessHeap() )
+	inline T* hpallocate( dword flags, std::size_t size, heaphadle_t hheap = ::GetProcessHeap() )
 	{
 		Details::heapmem_header* hdr = malloc_func_adapter< Details::heapmem_header* >( &::HeapAlloc, hheap, flags, sizeof( heapmem_header ) + size );
 		hdr->hHeap = hheap;
@@ -164,18 +166,18 @@ namespace MyCpp
 	}
 
 	template < typename T >
-	inline scoped_heap_memory< T > make_scoped_heap_memory( dword flags, std::size_t size, HANDLE hheap = ::GetProcessHeap() )
+	inline scoped_heap_memory< T > make_scoped_heap_memory( dword flags, std::size_t size, heaphadle_t hheap = ::GetProcessHeap() )
 	{
 		return std::move( scoped_heap_memory< T >( hpallocate< T >( flags, size, hheap ) ) );
 	}
 
 	template < typename T >
-	inline shared_heap_memory< T > make_shared_heap_memory( dword flags, std::size_t size, HANDLE hheap = ::GetProcessHeap() )
+	inline shared_heap_memory< T > make_shared_heap_memory( dword flags, std::size_t size, heaphadle_t hheap = ::GetProcessHeap() )
 	{
 		return std::move( shared_heap_memory< T >( hpallocate< T >( flags, size, hheap ), heap_memory_deleter< T >() ) );
 	}
 
-	inline HANDLE get_heap_memory_handle( void* ptr )
+	inline handle_t get_heap_memory_handle( void* ptr )
 	{
 		return Details::GetHeapMemoryHeader( ptr )->hHeap;
 	}

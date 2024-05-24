@@ -5,6 +5,12 @@
 
 namespace MyCpp
 {
+	typedef HANDLE handle_t;
+	typedef HKEY hkey_t;
+	typedef SC_HANDLE sc_handle_t;
+
+	const handle_t nullhandle = INVALID_HANDLE_VALUE;
+
 	template < typename HandleType >
 	struct safe_handle_closer
 	{
@@ -15,23 +21,23 @@ namespace MyCpp
 	};
 
 	template <>
-	struct safe_handle_closer< HANDLE >
+	struct safe_handle_closer< handle_t >
 	{
-		typedef HANDLE pointer;
+		typedef handle_t pointer;
 
-		void operator () ( HANDLE h )
+		void operator () ( handle_t h )
 		{
-			if ( h != null && h != INVALID_HANDLE_VALUE )
+			if ( h != null && h != nullhandle )
 				::CloseHandle( h );
 		}
 	};
 
 	template <>
-	struct safe_handle_closer< HKEY >
+	struct safe_handle_closer< hkey_t >
 	{
-		typedef HKEY pointer;
+		typedef hkey_t pointer;
 
-		void operator () ( HKEY h )
+		void operator () ( hkey_t h )
 		{
 			if ( h != null )
 				::RegCloseKey( h );
@@ -39,11 +45,11 @@ namespace MyCpp
 	};
 
 	template <>
-	struct safe_handle_closer< SC_HANDLE >
+	struct safe_handle_closer< sc_handle_t >
 	{
-		typedef SC_HANDLE pointer;
+		typedef sc_handle_t pointer;
 
-		void operator () ( SC_HANDLE h )
+		void operator () ( sc_handle_t h )
 		{
 			if ( h != null )
 				::CloseServiceHandle( h );
@@ -56,13 +62,13 @@ namespace MyCpp
 	template < typename HandleType >
 	using shared_handle_t = std::shared_ptr< typename std::remove_pointer< HandleType >::type >;
 
-	typedef scoped_handle_t< HANDLE >		scoped_generic_handle;
-	typedef scoped_handle_t< HKEY >			scoped_reg_handle;
-	typedef scoped_handle_t< SC_HANDLE >	scoped_svc_handle;
+	typedef scoped_handle_t< handle_t >		scoped_generic_handle;
+	typedef scoped_handle_t< hkey_t >		scoped_reg_handle;
+	typedef scoped_handle_t< sc_handle_t >	scoped_svc_handle;
 
-	typedef shared_handle_t< HANDLE >		shared_generic_handle;
-	typedef shared_handle_t< HKEY >			shared_reg_handle;
-	typedef shared_handle_t< SC_HANDLE >	shared_svc_handle;
+	typedef shared_handle_t< handle_t >		shared_generic_handle;
+	typedef shared_handle_t< hkey_t >		shared_reg_handle;
+	typedef shared_handle_t< sc_handle_t >	shared_svc_handle;
 
 	template < typename HandleType, typename Deleter >
 	inline scoped_handle_t< HandleType, Deleter > make_scoped_handle( HandleType handle, Deleter )
