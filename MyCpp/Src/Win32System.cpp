@@ -26,7 +26,7 @@ namespace MyCpp
 {
 	constexpr dword PROCESS_GET_INFO = PROCESS_QUERY_INFORMATION | PROCESS_VM_READ;
 
-	path_t GetProgramModuleFileName( HMODULE hmodule )
+	path_t GetProgramModuleFileName( module_handle_t hmodule )
 	{
 		vchar_t buffer( MAX_PATH );
 
@@ -39,7 +39,7 @@ namespace MyCpp
 		return cstr_t( buffer );
 	}
 
-	path_t GetProgramModuleFileLocation( HMODULE hmodule )
+	path_t GetProgramModuleFileLocation( module_handle_t hmodule )
 	{
 		return GetProgramModuleFileName( hmodule ).parent_path();
 	}

@@ -10,6 +10,7 @@ namespace MyCpp
 	typedef UINT_PTR ptrint_t;
 	typedef DWORD_PTR ptrlong_t;
 	typedef GUID guid_t;
+	typedef HMODULE module_handle_t;
 
 	inline string_t to_string_t( const path_t& p )
 	{
@@ -152,8 +153,8 @@ namespace MyCpp
 		SetRegBinary( parentKey, subKey, valueName, REG_QWORD, &value, sizeof( qword ) );
 	}
 
-	path_t GetProgramModuleFileName( HMODULE hmodule = null );
-	path_t GetProgramModuleFileLocation( HMODULE hmodule = null );
+	path_t GetProgramModuleFileName( module_handle_t hmodule = null );
+	path_t GetProgramModuleFileLocation( module_handle_t hmodule = null );
 
 	class Process
 	{
