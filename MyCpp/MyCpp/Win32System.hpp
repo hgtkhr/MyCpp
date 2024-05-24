@@ -407,6 +407,8 @@ namespace MyCpp
 using MyCpp::path_t;
 using MyCpp::ptrint_t;
 using MyCpp::ptrlong_t;
+using MyCpp::guid_t;
+using MyCpp::module_handle_t;
 using MyCpp::mutex_t;
 using MyCpp::csptr_t;
 using MyCpp::cslock_t;
