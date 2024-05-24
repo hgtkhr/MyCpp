@@ -246,7 +246,7 @@ namespace MyCpp
 		};
 	}
 
-	path_t GetSpecialFolderLocation( const GUID& folderId )
+	path_t GetSpecialFolderLocation( const guid_t& folderId )
 	{
 		CoInitialize();
 

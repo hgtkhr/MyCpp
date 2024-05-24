@@ -101,7 +101,7 @@ namespace MyCpp
 	sidptr_t GetProcessSid( handle_t process );
 
 	path_t GetCurrentLocation();
-	path_t GetSpecialFolderLocation( const GUID& folderId );
+	path_t GetSpecialFolderLocation( const guid_t& folderId );
 	path_t GetTemporaryPath();
 	path_t GetTemporaryFileName( const string_t& prefix );
 	path_t FindFilePath( const string_t& filename, const string_t& ext = null );
