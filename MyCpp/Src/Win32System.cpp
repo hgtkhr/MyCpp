@@ -24,6 +24,8 @@ namespace MyCpp
 {
 	constexpr dword PROCESS_STANDARD_RIGHTS = STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE;
 	constexpr dword PROCESS_LIMITED_RIGHTS = PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE;
+	constexpr dword THREAD_STANDARD_RIGHTS = STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE;
+	constexpr dword THREAD_LIMITED_RIGHTS = THREAD_QUERY_LIMITED_INFORMATION | SYNCHRONIZE;
 
 	path_t GetProgramModuleFileName( module_handle_t hmodule )
 	{
@@ -335,10 +337,10 @@ namespace MyCpp
 				thinfo.dwSize = Fill0( thinfo );
 				if ( ::Thread32First( snapshot.get(), &thinfo ) )
 				{
-					handle_t threadHandle = ::OpenThread( STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE, FALSE, thinfo.th32ThreadID );
+					handle_t threadHandle = ::OpenThread( THREAD_STANDARD_RIGHTS, FALSE, thinfo.th32ThreadID );
 					if ( threadHandle == null )
 					{
-						threadHandle = ::OpenThread( THREAD_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, FALSE, thinfo.th32ThreadID );
+						threadHandle = ::OpenThread( THREAD_LIMITED_RIGHTS | SYNCHRONIZE, FALSE, thinfo.th32ThreadID );
 						if ( threadHandle == null )
 							return null;
 					}
