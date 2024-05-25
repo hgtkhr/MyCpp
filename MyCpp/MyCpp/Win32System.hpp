@@ -3,6 +3,7 @@
 #include <filesystem>
 #include "MyCpp/StringUtils.hpp"
 #include "MyCpp/Win32SafeHandle.hpp"
+#include "MyCpp/Win32Memory.hpp"
 
 namespace MyCpp
 {
@@ -97,10 +98,6 @@ namespace MyCpp
 		return result;
 	}
 
-	typedef std::shared_ptr< std::remove_pointer< PSID >::type > sidptr_t;
-
-	sidptr_t GetProcessSid( handle_t process );
-
 	path_t GetCurrentLocation();
 	path_t GetSpecialFolderLocation( const guid_t& folderId );
 	path_t GetTemporaryPath();
@@ -161,6 +158,8 @@ namespace MyCpp
 	public:
 		class Data;
 
+		typedef typename std::remove_pointer< PSID >::type SID;
+
 		Process();
 		Process( Data&& data );
 
@@ -173,6 +172,10 @@ namespace MyCpp
 		dword GetId() const;
 		dword GetPrimaryThreadId() const;
 		dword GetExitCode() const;
+		SID* GetSid() const;
+		Process* GetParent() const;
+
+		static const Process* GetCurrent();
 
 		void Terminate( int exitCode );
 		void Suspend();
@@ -184,10 +187,16 @@ namespace MyCpp
 	};
 
 	typedef std::shared_ptr< Process > processptr_t;
+	typedef std::shared_ptr< Process::SID > process_sidptr_t;
 
-	inline sidptr_t GetProcessSid( const processptr_t& process )
+	inline process_sidptr_t GetProcessSid( const processptr_t& process )
 	{
-		return GetProcessSid( process->GetHandle() );
+		return std::move( process_sidptr_t( process->GetSid(), local_memory_deleter< Process::SID >() ) );
+	}
+
+	inline processptr_t GetParentProcess( const processptr_t& process )
+	{
+		return std::move( processptr_t( process->GetParent() ) );
 	}
 
 	class Window
@@ -237,10 +246,6 @@ namespace MyCpp
 
 	processptr_t GetProcess( dword pid );
 	processptr_t GetProcess( handle_t hProcess );
-	processptr_t GetParentProcess();
-
-	const Process* GetCurrentProcess();
-
 	processptr_t OpenProcessByFileName( const path_t& fileName, bool inheritHandle = false, dword accessMode = 0 );
 	processptr_t OpenCuProcessByFileName( const path_t& fileName, bool inheritHandle = false, dword accessMode = 0 );
 
@@ -413,5 +418,5 @@ using MyCpp::mutex_t;
 using MyCpp::csptr_t;
 using MyCpp::cslock_t;
 using MyCpp::processptr_t;
-using MyCpp::sidptr_t;
+using MyCpp::process_sidptr_t;
 #endif

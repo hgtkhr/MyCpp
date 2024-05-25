@@ -121,3 +121,7 @@ using MyCpp::vchar_t;
 using MyCpp::vwchar;
 using MyCpp::word;
 #endif
+
+#if defined(MYCPP_SHORT_NAMESPACE)
+namespace mpp = MyCpp;
+#endif

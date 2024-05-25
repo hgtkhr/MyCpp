@@ -1,6 +1,4 @@
 #include "MyCpp/Win32System.hpp"
-#include "MyCpp/Win32SafeHandle.hpp"
-#include "MyCpp/Win32Memory.hpp"
 #include "MyCpp/Error.hpp"
 #include "MyCpp/IntCast.hpp"
 
@@ -24,7 +22,8 @@
 
 namespace MyCpp
 {
-	constexpr dword PROCESS_GET_INFO = PROCESS_QUERY_INFORMATION | PROCESS_VM_READ;
+	constexpr dword PROCESS_STANDARD_RIGHTS = STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE;
+	constexpr dword PROCESS_LIMITED_RIGHTS = PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE;
 
 	path_t GetProgramModuleFileName( module_handle_t hmodule )
 	{
@@ -81,46 +80,14 @@ namespace MyCpp
 		return narrow_wide_string< string_t, std::wstring >( cstr_t( guidStr ) );
 	}
 
-	sidptr_t GetProcessSid( handle_t process )
-	{
-		handle_t token = null;
-
-		if ( ::OpenProcessToken( process, TOKEN_QUERY, &token ) )
-		{
-			dword bytes;
-
-			auto processToken = make_scoped_handle( token );
-			::GetTokenInformation( processToken.get(), TokenUser, null, 0, &bytes );
-
-			auto tokenUser = make_scoped_local_memory< TOKEN_USER >( LPTR, bytes );
-			if ( ::GetTokenInformation( processToken.get(), TokenUser, tokenUser.get(), bytes, &bytes ) )
-			{
-				if ( ::IsValidSid( tokenUser->User.Sid ) )
-				{
-					auto sidLength = ::GetLengthSid( tokenUser->User.Sid );
-					auto sid = make_scoped_local_memory< sidptr_t::element_type >( LPTR, sidLength );
-
-					::CopySid( sidLength, sid.get(), tokenUser->User.Sid );
-
-					if ( ::IsValidSid( sid.get() ) )
-						return std::move( sidptr_t( sid.release(), local_memory_deleter< sidptr_t::element_type >() ) );
-				}
-			}
-		}
-
-		exception< std::runtime_error >( FUNC_ERROR_MSG( "GetProcessSid", "Failed: 0x%08x", ::GetLastError() ) );
-
-		return null;
-	}
-
 	processptr_t OpenCuProcessByFileName( const path_t& fileName, bool inheritHandle, dword accessMode )
 	{
 		auto process = OpenProcessByFileName( fileName, inheritHandle, accessMode );
 
 		if ( process )
 		{
-			auto current = GetProcessSid( ::GetCurrentProcess() );
-			auto target = GetProcessSid( process->GetHandle() );
+			process_sidptr_t current( Process::GetCurrent()->GetSid(), local_memory_deleter< Process::SID >() );
+			process_sidptr_t target( GetProcessSid( process ) );
 
 			if ( ::EqualSid( current.get(), target.get() ) )
 				return process;
@@ -185,9 +152,12 @@ namespace MyCpp
 			string_t searchExeName = to_string_t( exeFilePath );
 			for ( dword i = 0; i < maxIndex; ++i )
 			{
-				if ( handle_t p = ::OpenProcess( accessMode | PROCESS_GET_INFO, ( inheritHandle ) ? TRUE : FALSE, pids[i] ) )
+				handle_t processHandle = ::OpenProcess( accessMode | PROCESS_STANDARD_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pids[i] );
+				if ( processHandle == null )
+					processHandle = ::OpenProcess( accessMode | PROCESS_LIMITED_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pids[i] );
+				if ( processHandle != null )
 				{
-					auto process = GetProcess( p );
+					auto process = GetProcess( processHandle );
 					string_t exeFilePath = to_string_t( process->GetFileName() );
 					if ( ::_tcsicmp( exeFilePath.c_str(), searchExeName.c_str()) == 0 )
 						return std::move( process );
@@ -199,9 +169,12 @@ namespace MyCpp
 			string_t searchExeName = to_string_t( fileName );
 			for ( dword i = 0; i < maxIndex; ++i )
 			{
-				if ( handle_t p = ::OpenProcess( accessMode | PROCESS_GET_INFO, ( inheritHandle ) ? TRUE : FALSE, pids[i] ) )
+				handle_t processHandle = ::OpenProcess( accessMode | PROCESS_STANDARD_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pids[i] );
+				if ( processHandle == null )
+					processHandle = ::OpenProcess( accessMode | PROCESS_LIMITED_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pids[i] );
+				if ( processHandle != null )
 				{
-					auto process = GetProcess( p );
+					auto process = GetProcess( processHandle );
 					if ( ::_tcsicmp( process->GetName().c_str(), searchExeName.c_str() ) == 0 )
 						return std::move( process );
 				}
@@ -354,18 +327,22 @@ namespace MyCpp
 	{
 		Process::Data::HANDLEID GetPrimaryThreadHandleId( dword processId )
 		{
-			auto snapshot = make_scoped_handle( ::CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, processId ) );
+			scoped_generic_handle snapshot( ::CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, processId ) );
 
 			if ( snapshot )
 			{
 				THREADENTRY32 thinfo;
 				thinfo.dwSize = Fill0( thinfo );
-
 				if ( ::Thread32First( snapshot.get(), &thinfo ) )
 				{
-					handle_t threadHandle = ::OpenThread( SYNCHRONIZE | THREAD_QUERY_INFORMATION, FALSE, thinfo.th32ThreadID );
-					if ( threadHandle != null )
-						return std::make_pair( threadHandle, thinfo.th32ThreadID );
+					handle_t threadHandle = ::OpenThread( STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE, FALSE, thinfo.th32ThreadID );
+					if ( threadHandle == null )
+					{
+						threadHandle = ::OpenThread( THREAD_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, FALSE, thinfo.th32ThreadID );
+						if ( threadHandle == null )
+							return null;
+					}
+					return std::move( Process::Data::HANDLEID( threadHandle, thinfo.th32ThreadID ) );
 				}
 			}
 
@@ -455,6 +432,83 @@ namespace MyCpp
 	Process::~Process()
 	{}
 
+	Process::SID* Process::GetSid() const
+	{
+		handle_t token = null;
+
+		if ( ::OpenProcessToken( m_data->GetProcessData().first, TOKEN_QUERY, &token) )
+		{
+			dword bytes;
+			auto processToken = make_scoped_handle( token );
+			::GetTokenInformation( processToken.get(), TokenUser, null, 0, &bytes );
+
+			auto tokenUser = make_scoped_local_memory< TOKEN_USER >( LPTR, bytes );
+			if ( ::GetTokenInformation( processToken.get(), TokenUser, tokenUser.get(), bytes, &bytes ) )
+			{
+				if ( ::IsValidSid( tokenUser->User.Sid ) )
+				{
+					dword sidLength = ::GetLengthSid( tokenUser->User.Sid );
+					SID* psid = lcallocate< SID >( LPTR, sidLength );
+
+					::CopySid( sidLength, psid, tokenUser->User.Sid );
+
+					if ( ::IsValidSid( psid ) )
+						return psid;
+
+					::LocalFree( reinterpret_cast < HLOCAL >( psid ) );
+				}
+			}
+		}
+
+		exception< std::runtime_error >( FUNC_ERROR_MSG( "Process::GetSid", "Failed: 0x%08x", ::GetLastError() ) );
+
+		return null;
+	}
+
+	Process* Process::GetParent() const
+	{
+		scoped_generic_handle snapshot( ::CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 ) );
+
+		if ( snapshot )
+		{
+			dword currentProcessId = m_data->GetProcessData().second;
+
+			PROCESSENTRY32 processEntry;
+			processEntry.dwSize = Fill0( processEntry );
+
+			if ( ::Process32First( snapshot.get(), &processEntry ) )
+			{
+				do
+				{
+					if ( processEntry.th32ProcessID == currentProcessId )
+					{
+						scoped_generic_handle process( ::OpenProcess(PROCESS_STANDARD_RIGHTS, FALSE, processEntry.th32ParentProcessID) );
+						if ( !process )
+							return null;
+
+						auto processPriThread = GetPrimaryThreadHandleId( processEntry.th32ParentProcessID );
+						if ( processPriThread.first != null )
+							return null;
+
+						return new Process( std::move(
+							Process::Data( { process.release(), processPriThread.first, processEntry.th32ParentProcessID, processPriThread.second } ) ) );
+					}
+				}
+				while ( ::Process32Next( snapshot.get(), &processEntry ) );
+			}
+		}
+
+		return null;
+	}
+
+	const Process* Process::GetCurrent()
+	{
+		static const Process currentProcess(
+			std::move( Process::Data( { ::GetCurrentProcess(), null, ::GetCurrentProcessId(), 0 } ) ) );
+
+		return &currentProcess;
+	}
+
 	string_t Process::GetName() const
 	{
 		return m_data->GetProcessBaseName();
@@ -503,18 +557,16 @@ namespace MyCpp
 	{
 		inline void SuspendProcess( dword processId, bool suspend )
 		{
-			auto snapshot = make_scoped_handle( ::CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, processId ) );
-
+			scoped_generic_handle snapshot ( ::CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, processId ) );
 			if ( snapshot )
 			{
 				THREADENTRY32 thinfo;
 				thinfo.dwSize = Fill0( thinfo );
-
 				if ( ::Thread32First( snapshot.get(), &thinfo ) )
 				{
 					do
 					{
-						auto thread = make_scoped_handle( ::OpenThread( THREAD_SUSPEND_RESUME, FALSE, thinfo.th32ThreadID ) );
+						scoped_generic_handle thread( ::OpenThread( THREAD_SUSPEND_RESUME, FALSE, thinfo.th32ThreadID ) );
 						if ( thread )
 						{
 							if ( suspend )
@@ -565,51 +617,28 @@ namespace MyCpp
 		if ( std::find( pids.begin(), pids.end(), pid) == pids.end() )
 			return null;
 
-		handle_t openedProcess = ::OpenProcess( PROCESS_GET_INFO, FALSE, pid );
+		handle_t openedProcess = ::OpenProcess( PROCESS_STANDARD_RIGHTS, FALSE, pid );
 		if ( openedProcess == null )
+		{
+			openedProcess = ::OpenProcess( PROCESS_LIMITED_RIGHTS, FALSE, pid );
+			if ( openedProcess == null )
+				return null;
+		}
+
+		auto priThread = GetPrimaryThreadHandleId( pid );
+		if ( priThread.first == null )
 			return null;
 
 		return std::make_shared< Process >( 
-			std::move( Process::Data( { openedProcess, null, pid, 0 } ) ) );
+			std::move( Process::Data( { openedProcess, priThread.first, pid, priThread.second } ) ) );
 	}
 
 	processptr_t GetProcess( handle_t hProcess )
 	{
+		dword processId = ::GetProcessId( hProcess );
+		auto priThread = GetPrimaryThreadHandleId( processId );
 		return std::make_shared< Process >( 
-			std::move( Process::Data( { hProcess, null, ::GetProcessId( hProcess ), 0 } ) ) );
-	}
-
-	processptr_t GetParentProcess()
-	{
-		auto snapshot = make_scoped_handle( ::CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 ) );
-
-		if ( snapshot )
-		{
-			dword currentProcessId = ::GetCurrentProcessId();
-
-			PROCESSENTRY32 processEntry;
-			processEntry.dwSize = Fill0( processEntry );
-
-			if ( ::Process32First( snapshot.get(), &processEntry ) )
-			{
-				do
-				{
-					if ( processEntry.th32ProcessID == currentProcessId )
-					{
-						handle_t process = ::OpenProcess( PROCESS_GET_INFO, FALSE, processEntry.th32ParentProcessID );
-
-						if ( process == null )
-							return null;
-
-						return std::make_shared< Process >(
-							std::move( Process::Data( { process, null, processEntry.th32ParentProcessID, 0 } ) ) );
-					}
-				}
-				while ( ::Process32Next( snapshot.get(), &processEntry ) );
-			}
-		}
-
-		return null;
+			std::move( Process::Data( { hProcess, priThread.first, processId, priThread.second } ) ) );
 	}
 
 	path_t FindFilePath( const string_t& filename, const string_t& ext )
@@ -928,14 +957,6 @@ namespace MyCpp
 		::EnumWindows( &EnumWindowsProc, pointer_int_cast< LPARAM >( &fwi ) );
 		
 		return fwi.hwnd;
-	}
-
-	const Process* GetCurrentProcess()
-	{
-		static Process currentProcess(
-			std::move( Process::Data( { ::GetCurrentProcess(), null, ::GetCurrentProcessId(), 0 } ) ) );
-
-		return &currentProcess;
 	}
 
 	uint GetRegBinary( hkey_t parentKey, const string_t& subKey, const string_t& valueName, void* ptr, uint size )
