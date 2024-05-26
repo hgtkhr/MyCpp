@@ -8,8 +8,10 @@
 namespace MyCpp
 {
 	typedef std::filesystem::path path_t;
-	typedef UINT_PTR ptrint_t;
-	typedef DWORD_PTR ptrlong_t;
+	typedef INT_PTR int_t;
+	typedef UINT_PTR uint_t;
+	typedef LONG_PTR long_t;
+	typedef ULONG_PTR ulong_t;
 	typedef GUID guid_t;
 	typedef HMODULE module_handle_t;
 
@@ -160,6 +162,9 @@ namespace MyCpp
 
 		typedef typename std::remove_pointer< PSID >::type SID;
 
+		typedef std::shared_ptr< Process > Ptr;
+		typedef std::shared_ptr< Process::SID > PtrSID;
+
 		Process();
 		Process( Data&& data );
 
@@ -172,8 +177,8 @@ namespace MyCpp
 		dword GetId() const;
 		dword GetPrimaryThreadId() const;
 		dword GetExitCode() const;
-		SID* GetSid() const;
-		Process* GetParent() const;
+		PtrSID GetSid() const;
+		Ptr GetParent() const;
 
 		static const Process* GetCurrent();
 
@@ -186,36 +191,31 @@ namespace MyCpp
 		std::shared_ptr< Data > m_data;
 	};
 
-	typedef std::shared_ptr< Process > processptr_t;
-	typedef std::shared_ptr< Process::SID > process_sidptr_t;
-
-	inline process_sidptr_t GetProcessSid( const processptr_t& process )
-	{
-		return std::move( process_sidptr_t( process->GetSid(), local_memory_deleter< Process::SID >() ) );
-	}
-
-	inline processptr_t GetParentProcess( const processptr_t& process )
-	{
-		return std::move( processptr_t( process->GetParent() ) );
-	}
-
 	class Window
 	{
 	public:
-		typedef HWND native_handle_t;
+		typedef HWND Handle;
+		typedef std::shared_ptr< Window > Ptr;
 
 		Window() = default;
 		Window( const Window& ) = default;
 		Window( Window&& ) = default;
-		Window( native_handle_t hwnd );
+
+		Window( Handle hwnd ) : m_hwnd( hwnd )
+		{}
 
 		~Window() = default;
 
 		Window& operator = ( const Window& ) = default;
 		Window& operator = ( Window&& ) = default;
-		Window& operator = ( native_handle_t hwnd );
 
-		operator native_handle_t () const
+		Window& operator = ( Handle hwnd )
+		{
+			m_hwnd = hwnd;
+			return *this;
+		}
+
+		operator Handle () const
 		{
 			return GetHandle();
 		}
@@ -223,33 +223,36 @@ namespace MyCpp
 		string_t Text() const;
 		string_t Text( const string_t& text);
 
+		long_t GetAttribute( int index );
+		long_t SetAttribute( int index, long_t value );
+
 		string_t ClassName() const;
 
-		ptrlong_t Send( uint msg, ptrint_t wparam, ptrlong_t lparam );
-		ptrlong_t SendNotify( uint msg, ptrint_t wparam, ptrlong_t lparam );
-		ptrlong_t SendTimeout( uint msg, ptrint_t wparam, ptrlong_t lparam, uint flags, uint milliseconds );
-		ptrlong_t Post( uint msg, ptrint_t wparam, ptrlong_t lparam );
+		long_t Send( uint msg, uint_t wparam, long_t lparam );
+		long_t SendNotify( uint msg, uint_t wparam, long_t lparam );
+		long_t SendTimeout( uint msg, uint_t wparam, long_t lparam, uint flags, uint milliseconds );
+		long_t Post( uint msg, uint_t wparam, long_t lparam );
 
-		Window GetParent() const;
+		Ptr GetParent() const;
 
 		void Close();
 
-		native_handle_t GetHandle() const
+		Handle GetHandle() const
 		{
 			return m_hwnd;
 		}
 	private:
-		native_handle_t m_hwnd = null;
+		Handle m_hwnd = null;
 	};
 
-	Window FindProcessWindow( const processptr_t& process, const string_t& wndClassName, const string_t& wndName );
+	Window::Ptr FindProcessWindow( const Process::Ptr& process, const string_t& wndClassName, const string_t& wndName );
 
-	processptr_t GetProcess( dword pid );
-	processptr_t GetProcess( handle_t hProcess );
-	processptr_t OpenProcessByFileName( const path_t& fileName, bool inheritHandle = false, dword accessMode = 0 );
-	processptr_t OpenCuProcessByFileName( const path_t& fileName, bool inheritHandle = false, dword accessMode = 0 );
+	Process::Ptr GetProcess( dword pid );
+	Process::Ptr GetProcess( handle_t hProcess );
+	Process::Ptr OpenProcessByFileName( const path_t& fileName, bool inheritHandle = false, dword accessMode = 0 );
+	Process::Ptr OpenCuProcessByFileName( const path_t& fileName, bool inheritHandle = false, dword accessMode = 0 );
 
-	processptr_t StartProcess( const string_t& cmdline, const path_t& appCurrentDir = null, void* envVariables = null, int creationFlags = 0, bool inheritHandle = false,  int cmdShow = SW_SHOWDEFAULT );
+	Process::Ptr StartProcess( const string_t& cmdline, const path_t& appCurrentDir = null, void* envVariables = null, int creationFlags = 0, bool inheritHandle = false,  int cmdShow = SW_SHOWDEFAULT );
 
 	int RunElevated( const path_t& file, const string_t& parameters = null, bool waitForExit = true, int cmdShow = SW_SHOWDEFAULT );
 
@@ -410,13 +413,16 @@ namespace MyCpp
 
 #if defined( MYCPP_GLOBALTYPEDES )
 using MyCpp::path_t;
-using MyCpp::ptrint_t;
-using MyCpp::ptrlong_t;
+using MyCpp::int_t;
+using MyCpp::uint_t;
+using MyCpp::long_t;
+using MyCpp::ulong_t;
 using MyCpp::guid_t;
 using MyCpp::module_handle_t;
 using MyCpp::mutex_t;
 using MyCpp::csptr_t;
 using MyCpp::cslock_t;
-using MyCpp::processptr_t;
-using MyCpp::process_sidptr_t;
+using processptr_t = MyCpp::Process::Ptr;
+using sidptr_t = MyCpp::Process::PtrSID;
+using wndptr_t = MyCpp::Window::Ptr;
 #endif

@@ -82,14 +82,14 @@ namespace MyCpp
 		return narrow_wide_string< string_t, std::wstring >( cstr_t( guidStr ) );
 	}
 
-	processptr_t OpenCuProcessByFileName( const path_t& fileName, bool inheritHandle, dword accessMode )
+	Process::Ptr OpenCuProcessByFileName( const path_t& fileName, bool inheritHandle, dword accessMode )
 	{
 		auto process = OpenProcessByFileName( fileName, inheritHandle, accessMode );
 
 		if ( process )
 		{
-			process_sidptr_t current( Process::GetCurrent()->GetSid(), local_memory_deleter< Process::SID >() );
-			process_sidptr_t target( GetProcessSid( process ) );
+			Process::PtrSID current = Process::GetCurrent()->GetSid();
+			Process::PtrSID target = process->GetSid();
 
 			if ( ::EqualSid( current.get(), target.get() ) )
 				return process;
@@ -129,7 +129,7 @@ namespace MyCpp
 		}
 	}
 
-	processptr_t OpenProcessByFileName( const path_t& fileName, bool inheritHandle, dword accessMode )
+	Process::Ptr OpenProcessByFileName( const path_t& fileName, bool inheritHandle, dword accessMode )
 	{
 		dword maxIndex = 0;
 		std::vector< dword > pids( 400 );
@@ -300,34 +300,42 @@ namespace MyCpp
 		else
 			::InitializeCriticalSectionEx( newCriticalSection, spinCount, CRITICAL_SECTION_NO_DEBUG_INFO );
 
-		return std::move( csptr_t( newCriticalSection, CriticalSectionDeleter() ) );
+		return { newCriticalSection, CriticalSectionDeleter() };
 	}
 
 	class Process::Data
 	{
 	public:
-		typedef std::pair< HANDLE, dword > HANDLEID;
+		struct ProcessInformation
+		{
+			handle_t hProcess;
+			dword processId;
+			handle_t prihThread;
+			dword priThreadId;
+		};
 
-		Data();
-		Data( Data&& right ) noexcept;
+		typedef std::pair< handle_t, dword > HandleIdType;
+
+		Data() = default;
+		Data( Data&& right ) noexcept = default;
 		Data( const PROCESS_INFORMATION& info );
 
 		~Data();
 
-		const HANDLEID& GetPrimaryThreadData() const;
-		const HANDLEID& GetProcessData() const;
+		const ProcessInformation& GetPrimaryThreadData() const;
+		const ProcessInformation& GetProcessData() const;
 		const path_t& GetProcessFileName() const;
 		const string_t& GetProcessBaseName() const;
 	private:
-		HANDLEID m_process = { null, 0 };
-		mutable HANDLEID m_priThread = { null, 0 };
+		mutable ProcessInformation m_process = {};
+		mutable csptr_t m_critical_section = CreateCriticalSection();
 		mutable path_t m_fileName;
 		mutable string_t m_baseName;
 	};
 
 	namespace
 	{
-		Process::Data::HANDLEID GetPrimaryThreadHandleId( dword processId )
+		Process::Data::HandleIdType GetPrimaryThreadHandleId( dword processId )
 		{
 			scoped_generic_handle snapshot( ::CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, processId ) );
 
@@ -344,7 +352,7 @@ namespace MyCpp
 						if ( threadHandle == null )
 							return null;
 					}
-					return std::move( Process::Data::HANDLEID( threadHandle, thinfo.th32ThreadID ) );
+					return std::make_pair( threadHandle, thinfo.th32ThreadID );
 				}
 			}
 
@@ -352,49 +360,45 @@ namespace MyCpp
 		}
 	}
 
-	inline Process::Data::Data()
-	{}
-
-	inline Process::Data::Data( Data&& right ) noexcept
-	{
-		m_process.swap( right.m_process );
-		m_priThread.swap( right.m_priThread );
-		m_fileName.swap( right.m_fileName );
-		m_baseName.swap( right.m_baseName );
-	}
-
 	inline Process::Data::Data( const PROCESS_INFORMATION& info )
-		: m_process( std::make_pair( info.hProcess, info.dwProcessId ) )
-		, m_priThread( std::make_pair( info.hThread, info.dwThreadId ) )
+		: m_process( { info.hProcess, info.dwProcessId, info.hThread, info.dwThreadId } )
 	{}
 
 	inline Process::Data::~Data()
 	{
-		if ( m_process.first != null
-			&& m_process.first != ::GetCurrentProcess() )
-			::CloseHandle( m_process.first );
+		if ( m_process.hProcess != null
+			&& m_process.hProcess != ::GetCurrentProcess() )
+			::CloseHandle( m_process.hProcess );
 
-		if ( m_priThread.first != null
-			&& m_priThread.first != ::GetCurrentThread() )
-			::CloseHandle( m_priThread.first );
+		if ( m_process.prihThread != null
+			&& m_process.prihThread != ::GetCurrentThread() )
+			::CloseHandle( m_process.prihThread );
 	}
 
-	inline const Process::Data::HANDLEID& Process::Data::GetPrimaryThreadData() const
+	inline const Process::Data::ProcessInformation& Process::Data::GetPrimaryThreadData() const
 	{
-		if ( m_priThread.first == null )
-			m_priThread = GetPrimaryThreadHandleId( m_process.second );
+		auto mutex = TryLockCriticalSection( m_critical_section );
 
-		return m_priThread;
+		if ( m_process.prihThread == null && m_process.priThreadId == 0 )
+		{
+			auto priThreadItem = GetPrimaryThreadHandleId( m_process.processId );
+			m_process.prihThread = priThreadItem.first;
+			m_process.priThreadId = priThreadItem.second;
+		}
+
+		return m_process;
 	}
 
-	inline const Process::Data::HANDLEID& Process::Data::GetProcessData() const
+	inline const Process::Data::ProcessInformation& Process::Data::GetProcessData() const
 	{
 		return m_process;
 	}
 
 	inline const path_t& Process::Data::GetProcessFileName() const
 	{
-		if ( m_process.first != null && m_fileName.empty() )
+		auto mutex = TryLockCriticalSection( m_critical_section );
+
+		if ( m_process.hProcess != null && m_fileName.empty() )
 		{
 			vchar_t buffer( MAX_PATH );
 
@@ -402,7 +406,7 @@ namespace MyCpp
 				[this] ( char_t* s, std::size_t n )
 			{
 				dword size = numeric_cast< dword >( n );
-				if ( ::QueryFullProcessImageName( m_process.first, 0, s, &size ) )
+				if ( ::QueryFullProcessImageName( m_process.hProcess, 0, s, &size ) )
 					return size + 1;
 
 				return 0UL;
@@ -416,7 +420,9 @@ namespace MyCpp
 
 	inline const string_t& Process::Data::GetProcessBaseName() const
 	{
-		if ( m_process.first != null && m_baseName.empty() )
+		auto mutex = TryLockCriticalSection( m_critical_section );
+
+		if ( m_process.hProcess != null && m_baseName.empty() )
 			m_baseName = to_string_t( GetProcessFileName().filename() );
 
 		return m_baseName;
@@ -434,11 +440,11 @@ namespace MyCpp
 	Process::~Process()
 	{}
 
-	Process::SID* Process::GetSid() const
+	Process::PtrSID Process::GetSid() const
 	{
 		handle_t token = null;
 
-		if ( ::OpenProcessToken( m_data->GetProcessData().first, TOKEN_QUERY, &token) )
+		if ( ::OpenProcessToken( m_data->GetProcessData().hProcess, TOKEN_QUERY, &token) )
 		{
 			dword bytes;
 			auto processToken = make_scoped_handle( token );
@@ -450,14 +456,12 @@ namespace MyCpp
 				if ( ::IsValidSid( tokenUser->User.Sid ) )
 				{
 					dword sidLength = ::GetLengthSid( tokenUser->User.Sid );
-					SID* psid = lcallocate< SID >( LPTR, sidLength );
+					PtrSID psid = std::make_shared< PtrSID >( lcallocate< SID >( LPTR, sidLength ), local_memory_deleter< SID >() );
 
-					::CopySid( sidLength, psid, tokenUser->User.Sid );
+					::CopySid( sidLength, psid.get(), tokenUser->User.Sid);
 
-					if ( ::IsValidSid( psid ) )
+					if ( ::IsValidSid( psid.get() ) )
 						return psid;
-
-					::LocalFree( reinterpret_cast < HLOCAL >( psid ) );
 				}
 			}
 		}
@@ -467,13 +471,13 @@ namespace MyCpp
 		return null;
 	}
 
-	Process* Process::GetParent() const
+	Process::Ptr Process::GetParent() const
 	{
 		scoped_generic_handle snapshot( ::CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 ) );
 
 		if ( snapshot )
 		{
-			dword currentProcessId = m_data->GetProcessData().second;
+			dword processId = m_data->GetProcessData().processId;
 
 			PROCESSENTRY32 processEntry;
 			processEntry.dwSize = Fill0( processEntry );
@@ -482,7 +486,7 @@ namespace MyCpp
 			{
 				do
 				{
-					if ( processEntry.th32ProcessID == currentProcessId )
+					if ( processEntry.th32ProcessID == processId )
 					{
 						scoped_generic_handle process( ::OpenProcess(PROCESS_STANDARD_RIGHTS, FALSE, processEntry.th32ParentProcessID) );
 						if ( !process )
@@ -492,8 +496,8 @@ namespace MyCpp
 						if ( processPriThread.first != null )
 							return null;
 
-						return new Process( std::move(
-							Process::Data( { process.release(), processPriThread.first, processEntry.th32ParentProcessID, processPriThread.second } ) ) );
+						return std::make_shared< Process >( 
+							std::move( Process::Data( { process.release(), processPriThread.first, processEntry.th32ParentProcessID, processPriThread.second } ) ) );
 					}
 				}
 				while ( ::Process32Next( snapshot.get(), &processEntry ) );
@@ -523,36 +527,36 @@ namespace MyCpp
 
 	handle_t Process::GetHandle() const
 	{
-		return m_data->GetProcessData().first;
+		return m_data->GetProcessData().hProcess;
 	};
 
 	handle_t Process::GetPrimaryThreadHandle() const
 	{
-		return m_data->GetPrimaryThreadData().first;
+		return m_data->GetPrimaryThreadData().prihThread;
 	}
 
 	dword Process::GetId() const
 	{
-		return m_data->GetProcessData().second;
+		return m_data->GetProcessData().processId;
 	}
 
 	dword Process::GetPrimaryThreadId() const
 	{
-		return m_data->GetPrimaryThreadData().second;
+		return m_data->GetPrimaryThreadData().priThreadId;
 	}
 
 	dword Process::GetExitCode() const
 	{
 		dword exitCode;
 
-		::GetExitCodeProcess( m_data->GetProcessData().first, &exitCode );
+		::GetExitCodeProcess( m_data->GetProcessData().hProcess, &exitCode );
 
 		return exitCode;
 	}
 
 	void Process::Terminate( int exitCode )
 	{
-		::TerminateProcess( m_data->GetProcessData().first, exitCode );
+		::TerminateProcess( m_data->GetProcessData().hProcess, exitCode );
 	}
 
 	namespace
@@ -585,23 +589,23 @@ namespace MyCpp
 
 	void Process::Suspend()
 	{
-		SuspendProcess( m_data->GetProcessData().second, true );
+		SuspendProcess( m_data->GetProcessData().processId, true );
 	}
 
 	void Process::Resume()
 	{
-		SuspendProcess( m_data->GetProcessData().second, false );
+		SuspendProcess( m_data->GetProcessData().processId, false );
 	}
 
 	dword Process::Wait( dword milliseconds, bool forInputIdle ) const
 	{
 		if ( forInputIdle )
-			return ::WaitForInputIdle( m_data->GetProcessData().first, milliseconds );
+			return ::WaitForInputIdle( m_data->GetProcessData().hProcess, milliseconds );
 		else
-			return ::WaitForSingleObject( m_data->GetProcessData().first, milliseconds );
+			return ::WaitForSingleObject( m_data->GetProcessData().hProcess, milliseconds );
 	}
 
-	processptr_t GetProcess( dword pid )
+	Process::Ptr GetProcess( dword pid )
 	{
 		std::vector< dword > pids( 200 );
 
@@ -635,7 +639,7 @@ namespace MyCpp
 			std::move( Process::Data( { openedProcess, priThread.first, pid, priThread.second } ) ) );
 	}
 
-	processptr_t GetProcess( handle_t hProcess )
+	Process::Ptr GetProcess( handle_t hProcess )
 	{
 		dword processId = ::GetProcessId( hProcess );
 		auto priThread = GetPrimaryThreadHandleId( processId );
@@ -656,7 +660,7 @@ namespace MyCpp
 		return szSearchPath.data();
 	}
 
-	processptr_t StartProcess( const string_t& cmdline, const path_t& appCurrentDir, void* envVariables, int creationFlags, bool inheritHandle,  int cmdShow )
+	Process::Ptr StartProcess( const string_t& cmdline, const path_t& appCurrentDir, void* envVariables, int creationFlags, bool inheritHandle,  int cmdShow )
 	{
 		bool inQuote = false;
 		bool isQuotedName = false;
@@ -870,70 +874,64 @@ namespace MyCpp
 		}
 	}
 
-	Window::Window( native_handle_t hwnd )
-		: m_hwnd( hwnd )
-	{}
-
-	Window& Window::operator = ( native_handle_t hwnd )
-	{
-		m_hwnd = hwnd;
-		return *this;
-	}
-
 	string_t Window::Text() const
 	{
 		vchar_t buffer;
-
 		GetWindowName( m_hwnd, buffer );
-
 		return cstr_t( buffer );
 	}
 
 	string_t Window::Text( const string_t& text )
 	{
 		string_t old = this->Text();
-
 		::SetWindowText( m_hwnd, text.c_str() );
-
 		return old;
+	}
+
+	long_t Window::SetAttribute( int index, long_t value )
+	{
+		return ::SetWindowLongPtr( m_hwnd, index, value );
+	}
+	
+	long_t Window::GetAttribute( int index )
+	{
+		return ::GetWindowLongPtr( m_hwnd, index );
 	}
 
 	string_t Window::ClassName() const
 	{
 		vchar_t buffer;
-
 		GetWindowClassName( m_hwnd, buffer );
-
 		return cstr_t( buffer );
 	}
 
-	ptrlong_t Window::Send( uint msg, ptrint_t wparam, ptrlong_t lparam )
+	long_t Window::Send( uint msg, uint_t wparam, long_t lparam )
 	{
-		return ::SendMessage( m_hwnd, msg, wparam, lparam );
+		return ::SendMessageW( m_hwnd, msg, wparam, lparam );
 	}
 
-	ptrlong_t Window::SendNotify( uint msg, ptrint_t wparam, ptrlong_t lparam )
+	long_t Window::SendNotify( uint msg, uint_t wparam, long_t lparam )
 	{
 		return ::SendNotifyMessage( m_hwnd, msg, wparam, lparam );
 	}
 
-	ptrlong_t Window::SendTimeout( uint msg, ptrint_t wparam, ptrlong_t lparam, uint flags, uint milliseconds )
+	long_t Window::SendTimeout( uint msg, uint_t wparam, long_t lparam, uint flags, uint milliseconds )
 	{
-		ptrlong_t result = 0;
+		ulong_t result = 0;
 
 		::SendMessageTimeout( m_hwnd, msg, wparam, lparam, flags, milliseconds, &result );
 
 		return result;
 	}
 
-	ptrlong_t Window::Post( uint msg, ptrint_t wparam, ptrlong_t lparam )
+	long_t Window::Post( uint msg, uint_t wparam, long_t lparam )
 	{
 		return ::PostMessage( m_hwnd, msg, wparam, lparam );
 	}
 
-	Window Window::GetParent() const
+	Window::Ptr Window::GetParent() const
 	{
-		return ::GetParent( m_hwnd );
+		return std::make_shared< Window >( ::GetParent(m_hwnd) );
 	}
 
 	void Window::Close()
@@ -942,7 +940,7 @@ namespace MyCpp
 			this->Send( WM_CLOSE, 0, 0 );
 	}
 
-	Window FindProcessWindow( const processptr_t& process, const string_t& wndClassName, const string_t& wndName )
+	Window::Ptr FindProcessWindow( const Process::Ptr& process, const string_t& wndClassName, const string_t& wndName )
 	{
 		if ( !process )
 			return null;
@@ -958,7 +956,7 @@ namespace MyCpp
 
 		::EnumWindows( &EnumWindowsProc, pointer_int_cast< LPARAM >( &fwi ) );
 		
-		return fwi.hwnd;
+		return std::make_shared< Window >( fwi.hwnd );
 	}
 
 	uint GetRegBinary( hkey_t parentKey, const string_t& subKey, const string_t& valueName, void* ptr, uint size )
