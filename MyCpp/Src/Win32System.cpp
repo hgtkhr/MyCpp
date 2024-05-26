@@ -486,12 +486,16 @@ namespace MyCpp
 				{
 					if ( processEntry.th32ProcessID == processId )
 					{
-						scoped_generic_handle process( ::OpenProcess(PROCESS_STANDARD_RIGHTS, FALSE, processEntry.th32ParentProcessID) );
+						scoped_generic_handle process( ::OpenProcess( PROCESS_STANDARD_RIGHTS, FALSE, processEntry.th32ParentProcessID ) );
 						if ( !process )
-							return null;
+						{
+							process = make_scoped_handle( ::OpenProcess( PROCESS_LIMITED_RIGHTS, FALSE, processEntry.th32ParentProcessID ) );
+							if ( !process )
+								return null;
+						}
 
 						auto processPriThread = GetPrimaryThreadHandleId( processEntry.th32ParentProcessID );
-						if ( processPriThread.first != null )
+						if ( processPriThread != null )
 							return null;
 
 						return std::make_shared< Process >( 
