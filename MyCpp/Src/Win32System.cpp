@@ -82,7 +82,7 @@ namespace MyCpp
 		return narrow_wide_string< string_t, std::wstring >( cstr_t( guidStr ) );
 	}
 
-	Process::Ptr OpenCuProcessByFileName( const path_t& fileName, bool inheritHandle, dword accessMode )
+	processptr_t OpenCuProcessByFileName( const path_t& fileName, bool inheritHandle, dword accessMode )
 	{
 		auto process = OpenProcessByFileName( fileName, inheritHandle, accessMode );
 
@@ -129,7 +129,7 @@ namespace MyCpp
 		}
 	}
 
-	Process::Ptr OpenProcessByFileName( const path_t& fileName, bool inheritHandle, dword accessMode )
+	processptr_t OpenProcessByFileName( const path_t& fileName, bool inheritHandle, dword accessMode )
 	{
 		dword maxIndex = 0;
 		std::vector< dword > pids( 400 );
@@ -601,7 +601,7 @@ namespace MyCpp
 			return ::WaitForSingleObject( m_data->GetProcessData().hProcess, milliseconds );
 	}
 
-	Process::Ptr GetProcess( dword pid )
+	processptr_t GetProcess( dword pid )
 	{
 		std::vector< dword > pids( 200 );
 
@@ -635,7 +635,7 @@ namespace MyCpp
 			std::move( Process::Data( { openedProcess, priThread.first, pid, priThread.second } ) ) );
 	}
 
-	Process::Ptr GetProcess( handle_t hProcess )
+	processptr_t GetProcess( handle_t hProcess )
 	{
 		dword processId = ::GetProcessId( hProcess );
 		auto priThread = GetPrimaryThreadHandleId( processId );
@@ -656,7 +656,7 @@ namespace MyCpp
 		return szSearchPath.data();
 	}
 
-	Process::Ptr StartProcess( const string_t& cmdline, const path_t& appCurrentDir, void* envVariables, int creationFlags, bool inheritHandle,  int cmdShow )
+	processptr_t StartProcess( const string_t& cmdline, const path_t& appCurrentDir, void* envVariables, int creationFlags, bool inheritHandle,  int cmdShow )
 	{
 		bool inQuote = false;
 		bool isQuotedName = false;
@@ -936,7 +936,7 @@ namespace MyCpp
 			this->Send( WM_CLOSE, 0, 0 );
 	}
 
-	Window::Ptr FindProcessWindow( const Process::Ptr& process, const string_t& wndClassName, const string_t& wndName )
+	wndptr_t FindProcessWindow( const Process::Ptr& process, const string_t& wndClassName, const string_t& wndName )
 	{
 		if ( !process )
 			return null;

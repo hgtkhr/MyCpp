@@ -187,6 +187,9 @@ namespace MyCpp
 		std::shared_ptr< Data > m_data;
 	};
 
+	typedef MyCpp::Process::Ptr processptr_t;
+	typedef MyCpp::Process::PtrSID sidptr_t;
+
 	class Window
 	{
 	public:
@@ -241,14 +244,16 @@ namespace MyCpp
 		Handle m_hwnd = null;
 	};
 
-	Window::Ptr FindProcessWindow( const Process::Ptr& process, const string_t& wndClassName, const string_t& wndName );
+	typedef MyCpp::Window::Ptr wndptr_t;
 
-	Process::Ptr GetProcess( dword pid );
-	Process::Ptr GetProcess( handle_t hProcess );
-	Process::Ptr OpenProcessByFileName( const path_t& fileName, bool inheritHandle = false, dword accessMode = 0 );
-	Process::Ptr OpenCuProcessByFileName( const path_t& fileName, bool inheritHandle = false, dword accessMode = 0 );
+	wndptr_t FindProcessWindow( const Process::Ptr& process, const string_t& wndClassName, const string_t& wndName );
 
-	Process::Ptr StartProcess( const string_t& cmdline, const path_t& appCurrentDir = null, void* envVariables = null, int creationFlags = 0, bool inheritHandle = false,  int cmdShow = SW_SHOWDEFAULT );
+	processptr_t GetProcess( dword pid );
+	processptr_t GetProcess( handle_t hProcess );
+	processptr_t OpenProcessByFileName( const path_t& fileName, bool inheritHandle = false, dword accessMode = 0 );
+	processptr_t OpenCuProcessByFileName( const path_t& fileName, bool inheritHandle = false, dword accessMode = 0 );
+
+	processptr_t StartProcess( const string_t& cmdline, const path_t& appCurrentDir = null, void* envVariables = null, int creationFlags = 0, bool inheritHandle = false,  int cmdShow = SW_SHOWDEFAULT );
 
 	int RunElevated( const path_t& file, const string_t& parameters = null, bool waitForExit = true, int cmdShow = SW_SHOWDEFAULT );
 
@@ -418,7 +423,7 @@ using MyCpp::module_handle_t;
 using MyCpp::mutex_t;
 using MyCpp::csptr_t;
 using MyCpp::cslock_t;
-using processptr_t = MyCpp::Process::Ptr;
-using sidptr_t = MyCpp::Process::PtrSID;
-using wndptr_t = MyCpp::Window::Ptr;
+using MyCpp::processptr_t;
+using MyCpp::sidptr_t;
+using MyCpp::wndptr_t;
 #endif
