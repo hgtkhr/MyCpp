@@ -456,7 +456,7 @@ namespace MyCpp
 				if ( ::IsValidSid( tokenUser->User.Sid ) )
 				{
 					dword sidLength = ::GetLengthSid( tokenUser->User.Sid );
-					PtrSID psid = std::make_shared< PtrSID >( lcallocate< SID >( LPTR, sidLength ), local_memory_deleter< SID >() );
+					PtrSID psid( lcallocate< SID >( LPTR, sidLength ), local_memory_deleter< SID >() );
 
 					::CopySid( sidLength, psid.get(), tokenUser->User.Sid);
 
