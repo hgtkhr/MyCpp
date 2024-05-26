@@ -223,8 +223,8 @@ namespace MyCpp
 		string_t Text() const;
 		string_t Text( const string_t& text);
 
-		long_t GetAttribute( int index );
-		long_t SetAttribute( int index, long_t value );
+		long_t Attribute( int index );
+		long_t Attribute( int index, long_t value );
 
 		string_t ClassName() const;
 

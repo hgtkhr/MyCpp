@@ -84,6 +84,18 @@ namespace MyCpp
 
 	constexpr Details::Null null;
 
+	template < typename T >
+	bool operator == ( const T& value, const Details::Null& )
+	{
+		return ( value == static_cast< T >( null ) );
+	}
+
+	template < typename T >
+	bool operator != ( const T& value, const Details::Null& )
+	{
+		return ( value != static_cast< T >( null ) );
+	}
+
 	template < typename T, std::size_t N >
 	inline constexpr std::size_t count_of( T( & )[N] )
 	{

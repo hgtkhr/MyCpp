@@ -314,8 +314,6 @@ namespace MyCpp
 			dword priThreadId;
 		};
 
-		typedef std::pair< handle_t, dword > HandleIdType;
-
 		Data() = default;
 		Data( Data&& right ) noexcept = default;
 		Data( const PROCESS_INFORMATION& info );
@@ -335,7 +333,7 @@ namespace MyCpp
 
 	namespace
 	{
-		Process::Data::HandleIdType GetPrimaryThreadHandleId( dword processId )
+		std::pair< handle_t, dword > GetPrimaryThreadHandleId( dword processId )
 		{
 			scoped_generic_handle snapshot( ::CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, processId ) );
 
@@ -348,7 +346,7 @@ namespace MyCpp
 					handle_t threadHandle = ::OpenThread( THREAD_STANDARD_RIGHTS, FALSE, thinfo.th32ThreadID );
 					if ( threadHandle == null )
 					{
-						threadHandle = ::OpenThread( THREAD_LIMITED_RIGHTS | SYNCHRONIZE, FALSE, thinfo.th32ThreadID );
+						threadHandle = ::OpenThread( THREAD_LIMITED_RIGHTS, FALSE, thinfo.th32ThreadID );
 						if ( threadHandle == null )
 							return null;
 					}
@@ -548,9 +546,7 @@ namespace MyCpp
 	dword Process::GetExitCode() const
 	{
 		dword exitCode;
-
 		::GetExitCodeProcess( m_data->GetProcessData().hProcess, &exitCode );
-
 		return exitCode;
 	}
 
@@ -632,7 +628,7 @@ namespace MyCpp
 		}
 
 		auto priThread = GetPrimaryThreadHandleId( pid );
-		if ( priThread.first == null )
+		if ( priThread == null )
 			return null;
 
 		return std::make_shared< Process >( 
@@ -888,12 +884,12 @@ namespace MyCpp
 		return old;
 	}
 
-	long_t Window::SetAttribute( int index, long_t value )
+	long_t Window::Attribute( int index, long_t value )
 	{
 		return ::SetWindowLongPtr( m_hwnd, index, value );
 	}
 	
-	long_t Window::GetAttribute( int index )
+	long_t Window::Attribute( int index )
 	{
 		return ::GetWindowLongPtr( m_hwnd, index );
 	}

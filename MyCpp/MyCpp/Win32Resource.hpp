@@ -83,7 +83,7 @@ namespace MyCpp
 
 		void operator () ( HCURSOR_T h )
 		{
-			if ( h != null )
+			if ( h.get_handle() != null )
 				::DestroyCursor( h );
 		}
 	};
