@@ -8,10 +8,6 @@
 namespace MyCpp
 {
 	typedef std::filesystem::path path_t;
-	typedef INT_PTR int_t;
-	typedef UINT_PTR uint_t;
-	typedef LONG_PTR long_t;
-	typedef ULONG_PTR ulong_t;
 	typedef GUID guid_t;
 	typedef HMODULE module_handle_t;
 
