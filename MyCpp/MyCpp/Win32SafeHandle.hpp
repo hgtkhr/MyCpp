@@ -96,6 +96,9 @@ namespace MyCpp
 }
 
 #if defined( MYCPP_GLOBALTYPEDES )
+using MyCpp::handle_t;
+using MyCpp::hkey_t;
+using MyCpp::sc_handle_t;
 using MyCpp::scoped_handle_t;
 using MyCpp::shared_handle_t;
 using MyCpp::scoped_generic_handle;

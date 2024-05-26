@@ -72,14 +72,18 @@ namespace MyCpp
 
 	// The return value of LoadCursor() or LoadImage() should be HCURSOR_T.
 	// Otherwise, smart-pointer's delteter will not work correctly.
-	typedef hcursor_wrapper HCURSOR_T;
+	typedef HBITMAP			HBITMAP_T;
+	typedef HACCEL			HACCEL_T;
+	typedef HICON			HICON_T;
+	typedef HMENU			HMENU_T;
+	typedef hcursor_wrapper	HCURSOR_T;
 
 	template <>
-	struct safe_handle_closer< HBITMAP >
+	struct safe_handle_closer< HBITMAP_T >
 	{
-		typedef HBITMAP pointer;
+		typedef HBITMAP_T pointer;
 
-		void operator () ( HBITMAP h )
+		void operator () ( HBITMAP_T h )
 		{
 			if ( h != null )
 				::DeleteObject( reinterpret_cast< HGDIOBJ >( h ) );
@@ -87,11 +91,11 @@ namespace MyCpp
 	};
 
 	template <>
-	struct safe_handle_closer< HACCEL >
+	struct safe_handle_closer< HACCEL_T >
 	{
-		typedef HACCEL pointer;
+		typedef HACCEL_T pointer;
 
-		void operator () ( HACCEL h )
+		void operator () ( HACCEL_T h )
 		{
 			if ( h != null )
 				::DestroyAcceleratorTable( h );
@@ -111,11 +115,11 @@ namespace MyCpp
 	};
 
 	template <>
-	struct safe_handle_closer< HICON >
+	struct safe_handle_closer< HICON_T >
 	{
-		typedef HICON pointer;
+		typedef HICON_T pointer;
 
-		void operator () ( HICON h )
+		void operator () ( HICON_T h )
 		{
 			if ( h != null )
 				::DestroyIcon( h );
@@ -123,32 +127,37 @@ namespace MyCpp
 	};
 
 	template <>
-	struct safe_handle_closer< HMENU >
+	struct safe_handle_closer< HMENU_T >
 	{
-		typedef HMENU pointer;
+		typedef HMENU_T pointer;
 
-		void operator () ( HMENU h )
+		void operator () ( HMENU_T h )
 		{
 			if ( h != null )
 				::DestroyMenu( h );
 		}
 	};
 
-	inline constexpr char_t* resource_id( int id )
+	inline constexpr char_t* IntToResourcePtr( int id )
 	{
 		return MAKEINTRESOURCE( id );
 	}
 
-	inline constexpr word lang_id( word id_primary, word id_secondary )
+	inline constexpr word LangID( word id_primary, word id_secondary )
 	{
 		return MAKELANGID( id_primary, id_secondary );
 	}
 
-	std::pair< void*, std::size_t > GetRawResourceData( HMODULE module, const char_t* type, const char_t* name, word language = lang_id( LANG_NEUTRAL, SUBLANG_DEFAULT ) );
-	string_t GetStringResource( HINSTANCE instance, uint id );
+	std::pair< void*, std::size_t > GetRawResourceData( handle_t module_handle, const char_t* type, const char_t* name, word language = LangID( LANG_NEUTRAL, SUBLANG_DEFAULT ) );
+	string_t GetStringResource( handle_t instance_handle, uint id );
 }
 
 #if defined( MYCPP_GLOBALTYPEDES )
+using MyCpp::HCURSOR_T;
+using MyCpp::HBITMAP_T;
+using MyCpp::HACCEL_T;
+using MyCpp::HICON_T;
+using MyCpp::HMENU_T;
 using MyCpp::HCURSOR_T;
 #endif
 
@@ -158,17 +167,17 @@ using MyCpp::HCURSOR_T;
 
 inline 
 HCURSOR_T CreateCursor(
-	HINSTANCE  hInst,
-	int        xHotSpot,
-	int        yHotSpot,
-	int        nWidth,
-	int        nHeight,
-	void*      pvANDPlane,
-	void*      pvXORPlane
+	MyCpp::handle_t  hInst,
+	int              xHotSpot,
+	int              yHotSpot,
+	int              nWidth,
+	int              nHeight,
+	void*            pvANDPlane,
+	void*            pvXORPlane
 )
 {
 	return ::CreateCursor( 
-		hInst, 
+		reinterpret_cast< HINSTANCE >( hInst ), 
 		xHotSpot, 
 		yHotSpot, 
 		nWidth, 
@@ -178,27 +187,27 @@ HCURSOR_T CreateCursor(
 	);
 }
 
-inline HCURSOR_T LoadCursor( HINSTANCE hInstance, LPCSTR lpCursorName )
+inline HCURSOR_T LoadCursor( MyCpp::handle_t hInstance, const char* lpCursorName )
 {
-	return ::LoadCursorA( hInstance, lpCursorName );
+	return ::LoadCursorA( reinterpret_cast< HINSTANCE >( hInstance ), lpCursorName );
 }
 
-inline HCURSOR_T LoadCursor( HINSTANCE hInstance, LPCWSTR lpCursorName )
+inline HCURSOR_T LoadCursor( MyCpp::handle_t hInstance, const wchar_t* lpCursorName )
 {
-	return ::LoadCursorW( hInstance, lpCursorName );
+	return ::LoadCursorW( reinterpret_cast< HINSTANCE >( hInstance ), lpCursorName );
 }
 
-inline HCURSOR_T LoadCursorFromFile( LPCSTR lpFileName )
+inline HCURSOR_T LoadCursorFromFile( const char* lpFileName )
 {
 	return ::LoadCursorFromFileA( lpFileName );
 }
 
-inline HCURSOR_T LoadCursorFromFile( LPCWSTR lpFileName )
+inline HCURSOR_T LoadCursorFromFile( const wchar_t* lpFileName )
 {
 	return ::LoadCursorFromFileW( lpFileName );
 }
 
-inline HCURSOR_T CopyCursor( HCURSOR cursor )
+inline HCURSOR_T CopyCursor( HCURSOR_T cursor )
 {
 	return ::CopyIcon( cursor );
 }
