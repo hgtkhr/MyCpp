@@ -88,8 +88,8 @@ namespace MyCpp
 
 		if ( process )
 		{
-			Process::PtrSID current = Process::GetCurrent()->GetSid();
-			Process::PtrSID target = process->GetSid();
+			auto current = Process::GetCurrent()->GetSid();
+			auto target = process->GetSid();
 
 			if ( ::EqualSid( current.get(), target.get() ) )
 				return process;
@@ -1014,7 +1014,6 @@ namespace MyCpp
 
 				dword size = sizeof( Xword );
 				dword dataType = REGTYPE;
-
 				scoped_reg_handle regHandle( hk );
 
 				r = ::RegQueryValueEx( hk, valueName.c_str(), null, &dataType, reinterpret_cast< byte* >( &result ), &size );
