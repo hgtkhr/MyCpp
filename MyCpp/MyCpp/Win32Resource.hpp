@@ -9,7 +9,9 @@ namespace MyCpp
 	class hcursor_wrapper
 	{
 	public:
-		hcursor_wrapper( HCURSOR hCursor )
+		typedef HCURSOR Handle;
+
+		hcursor_wrapper( Handle hCursor )
 			: m_hcursor( hCursor )
 		{}
 
@@ -17,27 +19,27 @@ namespace MyCpp
 		hcursor_wrapper( const hcursor_wrapper& other ) = default;
 		hcursor_wrapper( hcursor_wrapper&& other ) noexcept = default;
 
-		operator HCURSOR () const
+		operator Handle () const
 		{
 			return m_hcursor;
 		}
 
-		HCURSOR get_handle() const
+		Handle get_handle() const
 		{
 			return m_hcursor;
 		}
 
-		HCURSOR* operator & ()
+		Handle* operator & ()
 		{
 			return &m_hcursor;
 		}
 
-		const HCURSOR* operator & () const
+		const Handle* operator & () const
 		{
 			return &m_hcursor;
 		}
 
-		hcursor_wrapper& operator = ( HCURSOR hCursor )
+		hcursor_wrapper& operator = ( Handle hCursor )
 		{
 			m_hcursor = hCursor;
 		}
@@ -47,6 +49,26 @@ namespace MyCpp
 	private:
 		HCURSOR m_hcursor = null;
 	};
+
+	bool operator == ( const hcursor_wrapper& lhs, const hcursor_wrapper& rhs )
+	{
+		return ( lhs.get_handle() == rhs.get_handle() );
+	}
+
+	bool operator != ( const hcursor_wrapper& lhs, const hcursor_wrapper& rhs )
+	{
+		return ( lhs.get_handle() != rhs.get_handle() );
+	}
+
+	bool operator == ( const hcursor_wrapper& lhs, const Details::Null& )
+	{
+		return ( lhs.get_handle() == null );
+	}
+
+	bool operator != ( const hcursor_wrapper& lhs, const Details::Null& )
+	{
+		return ( lhs.get_handle() != null );
+	}
 
 	// The return value of LoadCursor() or LoadImage() should be HCURSOR_T.
 	// Otherwise, smart-pointer's delteter will not work correctly.
@@ -83,7 +105,7 @@ namespace MyCpp
 
 		void operator () ( HCURSOR_T h )
 		{
-			if ( h.get_handle() != null )
+			if ( h != null )
 				::DestroyCursor( h );
 		}
 	};
