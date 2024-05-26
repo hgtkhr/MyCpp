@@ -129,6 +129,18 @@ namespace MyCpp
 	template < typename T > using scoped_heap_memory = scoped_memory_t< T, heap_memory_deleter< T > >;
 	template < typename T > using shared_heap_memory = shared_memory_t< T >;
 
+	template < typename T, typename Deleter >
+	inline scoped_memory_t< T, Deleter > make_scoped_memory( T* ptr, Deleter d )
+	{
+		return std::move( scoped_memory_t< T, Deleter >( ptr, d ) );
+	}
+
+	template < typename T, typename Deleter >
+	inline shared_memory_t< T > make_shared_memory( T* ptr, Deleter d )
+	{
+		return std::move( shared_memory_t< T >( ptr, d ) );
+	}
+
 	template < typename T >
 	inline scoped_local_memory< T > make_scoped_local_memory( uint flags, std::size_t size )
 	{

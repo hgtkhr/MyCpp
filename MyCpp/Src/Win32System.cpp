@@ -228,7 +228,7 @@ namespace MyCpp
 		LPWSTR psz;
 		HRESULT r = ::SHGetKnownFolderPath( folderId, 0, null, &psz );
 
-		scoped_memory_t< wchar_t, CoMemoryDeleter< wchar_t > > str( psz );
+		auto str = make_scoped_memory( psz, CoMemoryDeleter< wchar_t >() );
 
 		if ( FAILED( r ) )
 			exception< std::runtime_error >( FUNC_ERROR_ID( "SHGetKnownFolderPath", r ) );
