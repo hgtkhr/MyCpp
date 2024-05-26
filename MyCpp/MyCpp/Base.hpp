@@ -82,13 +82,15 @@ namespace MyCpp
 		};
 
 		template < typename T >
-		bool operator == ( const T& value, const Details::Null& )
+		[[nodiscard]]
+		constexpr bool operator == ( const T& value, const Details::Null& )
 		{
 			return ( value == static_cast< T >( null ) );
 		}
 
 		template < typename T >
-		bool operator != ( const T& value, const Details::Null& )
+		[[nodiscard]]
+		constexpr bool operator != ( const T& value, const Details::Null& )
 		{
 			return ( value != static_cast< T >( null ) );
 		}

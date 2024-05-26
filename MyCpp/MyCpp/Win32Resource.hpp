@@ -50,22 +50,26 @@ namespace MyCpp
 		HCURSOR m_hcursor = null;
 	};
 
-	bool operator == ( const hcursor_wrapper& lhs, const hcursor_wrapper& rhs )
+	[[nodiscard]]
+	inline bool operator == ( const hcursor_wrapper& lhs, const hcursor_wrapper& rhs )
 	{
 		return ( lhs.get_handle() == rhs.get_handle() );
 	}
 
-	bool operator != ( const hcursor_wrapper& lhs, const hcursor_wrapper& rhs )
+	[[nodiscard]]
+	inline bool operator != ( const hcursor_wrapper& lhs, const hcursor_wrapper& rhs )
 	{
 		return ( lhs.get_handle() != rhs.get_handle() );
 	}
 
-	bool operator == ( const hcursor_wrapper& lhs, const Details::Null& )
+	[[nodiscard]]
+	constexpr bool operator == ( const hcursor_wrapper& lhs, const Details::Null& )
 	{
 		return ( lhs.get_handle() == null );
 	}
 
-	bool operator != ( const hcursor_wrapper& lhs, const Details::Null& )
+	[[nodiscard]]
+	constexpr bool operator != ( const hcursor_wrapper& lhs, const Details::Null& )
 	{
 		return ( lhs.get_handle() != null );
 	}
