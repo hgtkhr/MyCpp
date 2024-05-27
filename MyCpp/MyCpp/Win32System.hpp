@@ -246,7 +246,7 @@ namespace mycpp
 
 	typedef mycpp::Window::Ptr wndptr_t;
 
-	wndptr_t FindProcessWindow( const Process::Ptr& process, const string_t& wndClassName, const string_t& wndName );
+	wndptr_t FindProcessWindow( const processptr_t& process, const string_t& wndClassName, const string_t& wndName );
 
 	processptr_t GetProcess( dword pid );
 	processptr_t GetProcess( handle_t hProcess );

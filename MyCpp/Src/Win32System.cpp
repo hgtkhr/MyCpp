@@ -2,6 +2,8 @@
 #include "MyCpp/Error.hpp"
 #include "MyCpp/IntCast.hpp"
 
+#include <stack>
+
 #include <Objbase.h>
 #include <shellapi.h>
 #include <ShlObj.h>
@@ -22,10 +24,10 @@
 
 namespace mycpp
 {
-	constexpr dword PROCESS_STANDARD_RIGHTS = STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE;
-	constexpr dword PROCESS_LIMITED_RIGHTS = PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE;
-	constexpr dword THREAD_STANDARD_RIGHTS = STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE;
-	constexpr dword THREAD_LIMITED_RIGHTS = THREAD_QUERY_LIMITED_INFORMATION | SYNCHRONIZE;
+	constexpr dword PROCESS_STANDARD_RIGHTS = PROCESS_QUERY_INFORMATION | PROCESS_TERMINATE | SYNCHRONIZE;
+	constexpr dword PROCESS_LIMITED_RIGHTS = PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE | SYNCHRONIZE;
+	constexpr dword THREAD_STANDARD_RIGHTS = THREAD_QUERY_INFORMATION | THREAD_SUSPEND_RESUME | SYNCHRONIZE;
+	constexpr dword THREAD_LIMITED_RIGHTS = THREAD_QUERY_LIMITED_INFORMATION| THREAD_SUSPEND_RESUME | SYNCHRONIZE;
 
 	path_t GetProgramModuleFileName( module_handle_t hmodule )
 	{
@@ -127,64 +129,96 @@ namespace mycpp
 
 			return std::filesystem::weakly_canonical( szSearchPath.data() );
 		}
+
+		inline processptr_t FindProcessByFullPath( const path_t& fileName, bool inheritHandle, dword accessMode )
+		{
+			dword maxIndex = 0;
+			std::vector< dword > pids( 400 );
+
+			adaptive_load( pids, pids.size(),
+						   [&maxIndex] ( dword* pn, std::size_t n )
+			{
+				dword size;
+				::EnumProcesses( pn, numeric_cast< dword >( n * sizeof( dword ) ), &size );
+
+				size /= sizeof( dword );
+
+				if ( size < n )
+					maxIndex = size;
+
+				return size;
+			} );
+
+			path_t searchPath = fileName;
+			vchar_t szProcessPath( MAX_PATH );
+
+			if ( !searchPath.is_absolute() )
+				searchPath = ComplatePath( searchPath );
+
+			string_t searchPathStr = to_string_t( searchPath );
+
+			for ( const auto& pid : pids )
+			{
+				handle_t ph = ::OpenProcess( accessMode | PROCESS_STANDARD_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pid );
+				if ( ph == null )
+					ph = ::OpenProcess( accessMode | PROCESS_LIMITED_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pid );
+				if ( ph != null )
+				{
+					adaptive_load( szProcessPath, szProcessPath.size(),
+									[&ph] ( char_t* s, std::size_t n )
+					{
+						DWORD size = numeric_cast< DWORD >( n );
+						if ( ::QueryFullProcessImageName( ph, 0, s, &size ) )
+							return size + 1;
+						return 0UL;
+					} );
+
+					if ( ::_tcsicmp( cstr_t( szProcessPath ), to_string_t( searchPath ).c_str() ) == 0 )
+						return GetProcess( ph );
+				}
+			}
+
+			return null;
+		}
+
+		inline processptr_t FindProcessByFileName( const path_t& fileName, bool inheritHandle, dword accessMode )
+		{
+			PROCESSENTRY32 pe32;
+			pe32.dwSize = Fill0( pe32 );
+
+			string_t searchFileName = to_string_t( fileName );
+
+			scoped_generic_handle processSnapshot( ::CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 ) );
+
+			if ( processSnapshot.get() == INVALID_HANDLE_VALUE )
+				return null;
+
+			if ( ::Process32First( processSnapshot.get(), &pe32 ) == FALSE )
+				return null;
+
+			do
+			{
+				if ( ::_tcsicmp( pe32.szExeFile, searchFileName.c_str() ) == 0 )
+				{
+					handle_t ph = ::OpenProcess( accessMode | PROCESS_STANDARD_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pe32.th32ProcessID );
+					if ( ph == null )
+						ph = ::OpenProcess( accessMode | PROCESS_LIMITED_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pe32.th32ProcessID );
+					if ( ph != null )
+						return GetProcess( pe32.th32ProcessID );
+				}
+			}
+			while ( ::Process32Next( processSnapshot.get(), &pe32 ) );
+
+			return null;
+		}
 	}
 
 	processptr_t OpenProcessByFileName( const path_t& fileName, bool inheritHandle, dword accessMode )
 	{
-		dword maxIndex = 0;
-		std::vector< dword > pids( 400 );
-
-		adaptive_load( pids, pids.size(),
-			[&maxIndex] ( dword* pn, std::size_t n )
-		{
-			dword size;
-			::EnumProcesses( pn, numeric_cast< dword >( n * sizeof( dword ) ), &size );
-
-			size /= sizeof( dword );
-
-			if ( size < n )
-				maxIndex = size;
-
-			return size;
-		} );
-
 		if ( fileName.has_parent_path() )
-		{
-			path_t exeFilePath = ComplatePath( fileName );
-			string_t searchExeName = to_string_t( exeFilePath );
-			for ( dword i = 0; i < maxIndex; ++i )
-			{
-				handle_t processHandle = ::OpenProcess( accessMode | PROCESS_STANDARD_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pids[i] );
-				if ( processHandle == null )
-					processHandle = ::OpenProcess( accessMode | PROCESS_LIMITED_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pids[i] );
-				if ( processHandle != null )
-				{
-					auto process = GetProcess( processHandle );
-					string_t exeFilePath = to_string_t( process->GetFileName() );
-					if ( ::_tcsicmp( exeFilePath.c_str(), searchExeName.c_str()) == 0 )
-						return std::move( process );
-				}
-			}
-		}
+			return FindProcessByFullPath( fileName, inheritHandle, accessMode );
 		else
-		{
-			string_t searchExeName = to_string_t( fileName );
-			for ( dword i = 0; i < maxIndex; ++i )
-			{
-				handle_t processHandle = ::OpenProcess( accessMode | PROCESS_STANDARD_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pids[i] );
-				if ( processHandle == null )
-					processHandle = ::OpenProcess( accessMode | PROCESS_LIMITED_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pids[i] );
-				if ( processHandle != null )
-				{
-					auto process = GetProcess( processHandle );
-					if ( ::_tcsicmp( process->GetName().c_str(), searchExeName.c_str() ) == 0 )
-						return std::move( process );
-				}
-			}
-		}
-
-
-		return null;
+			return FindProcessByFileName( fileName, inheritHandle, accessMode );
 	}
 
 	namespace
@@ -331,33 +365,6 @@ namespace mycpp
 		mutable string_t m_baseName;
 	};
 
-	namespace
-	{
-		std::pair< handle_t, dword > GetPrimaryThreadHandleId( dword processId )
-		{
-			scoped_generic_handle snapshot( ::CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, processId ) );
-
-			if ( snapshot )
-			{
-				THREADENTRY32 thinfo;
-				thinfo.dwSize = Fill0( thinfo );
-				if ( ::Thread32First( snapshot.get(), &thinfo ) )
-				{
-					handle_t threadHandle = ::OpenThread( THREAD_STANDARD_RIGHTS, FALSE, thinfo.th32ThreadID );
-					if ( threadHandle == null )
-					{
-						threadHandle = ::OpenThread( THREAD_LIMITED_RIGHTS, FALSE, thinfo.th32ThreadID );
-						if ( threadHandle == null )
-							return null;
-					}
-					return std::make_pair( threadHandle, thinfo.th32ThreadID );
-				}
-			}
-
-			return null;
-		}
-	}
-
 	inline Process::Data::Data( const PROCESS_INFORMATION& info )
 		: m_process( { info.hProcess, info.dwProcessId, info.hThread, info.dwThreadId } )
 	{}
@@ -371,20 +378,6 @@ namespace mycpp
 		if ( m_process.prihThread != null
 			&& m_process.prihThread != ::GetCurrentThread() )
 			::CloseHandle( m_process.prihThread );
-	}
-
-	inline const Process::Data::ProcessInformation& Process::Data::GetPrimaryThreadData() const
-	{
-		auto mutex = TryLockCriticalSection( m_critical_section );
-
-		if ( m_process.prihThread == null && m_process.priThreadId == 0 )
-		{
-			auto priThreadItem = GetPrimaryThreadHandleId( m_process.processId );
-			m_process.prihThread = priThreadItem.first;
-			m_process.priThreadId = priThreadItem.second;
-		}
-
-		return m_process;
 	}
 
 	inline const Process::Data::ProcessInformation& Process::Data::GetProcessData() const
@@ -406,7 +399,6 @@ namespace mycpp
 				dword size = numeric_cast< dword >( n );
 				if ( ::QueryFullProcessImageName( m_process.hProcess, 0, s, &size ) )
 					return size + 1;
-
 				return 0UL;
 			} );
 
@@ -493,13 +485,8 @@ namespace mycpp
 							if ( !process )
 								return null;
 						}
-
-						auto processPriThread = GetPrimaryThreadHandleId( processEntry.th32ParentProcessID );
-						if ( processPriThread != null )
-							return null;
-
-						return std::make_shared< Process >( 
-							std::move( Process::Data( { process.release(), processPriThread.first, processEntry.th32ParentProcessID, processPriThread.second } ) ) );
+						return std::make_shared< Process >(
+							std::move( Process::Data( { process.release(), null, processEntry.th32ParentProcessID, 0 } ) ) );
 					}
 				}
 				while ( ::Process32Next( snapshot.get(), &processEntry ) );
@@ -534,7 +521,7 @@ namespace mycpp
 
 	handle_t Process::GetPrimaryThreadHandle() const
 	{
-		return m_data->GetPrimaryThreadData().prihThread;
+		return m_data->GetProcessData().prihThread;
 	}
 
 	dword Process::GetId() const
@@ -544,7 +531,7 @@ namespace mycpp
 
 	dword Process::GetPrimaryThreadId() const
 	{
-		return m_data->GetPrimaryThreadData().priThreadId;
+		return m_data->GetProcessData().priThreadId;
 	}
 
 	dword Process::GetExitCode() const
@@ -607,7 +594,7 @@ namespace mycpp
 
 	processptr_t GetProcess( dword pid )
 	{
-		std::vector< dword > pids( 200 );
+		std::vector< dword > pids( 400 );
 
 		adaptive_load( pids, pids.size(),
 			[] ( dword* pn, std::size_t n )
@@ -631,20 +618,14 @@ namespace mycpp
 				return null;
 		}
 
-		auto priThread = GetPrimaryThreadHandleId( pid );
-		if ( priThread == null )
-			return null;
-
 		return std::make_shared< Process >( 
-			std::move( Process::Data( { openedProcess, priThread.first, pid, priThread.second } ) ) );
+			std::move( Process::Data( { openedProcess, null, pid, 0 } ) ) );
 	}
 
 	processptr_t GetProcess( handle_t hProcess )
 	{
-		dword processId = ::GetProcessId( hProcess );
-		auto priThread = GetPrimaryThreadHandleId( processId );
-		return std::make_shared< Process >( 
-			std::move( Process::Data( { hProcess, priThread.first, processId, priThread.second } ) ) );
+		return std::make_shared< Process >(
+			std::move( Process::Data( { hProcess, null, ::GetProcessId( hProcess ), 0 } ) ) );
 	}
 
 	path_t FindFilePath( const string_t& filename, const string_t& ext )
@@ -787,6 +768,7 @@ namespace mycpp
 			LPCTSTR className;
 			LPCTSTR windowName;
 			vchar_t buffer;
+			bool found;
 		};
 
 		inline std::size_t GetWindowClassName( HWND hwnd, vchar_t& buffer )
@@ -813,31 +795,25 @@ namespace mycpp
 			LPARAM lParam   // アプリケーション定義の値
 		)
 		{
-			dword pid;
 			FINDWINDOWINFO* p = pointer_int_cast< FINDWINDOWINFO* >( lParam );
 
-			::GetWindowThreadProcessId( hwnd, &pid );
-			if ( pid == p->pid )
+			GetWindowClassName( hwnd, p->buffer );
+			if ( ::_tcsicmp( cstr_t( p->buffer ), p->className ) == 0 )
 			{
-				GetWindowClassName( hwnd, p->buffer );
-				if ( ::_tcsicmp( cstr_t( p->buffer ), p->className ) == 0 )
+				GetWindowName( hwnd, p->buffer );
+				if ( ::_tcsicmp( cstr_t( p->buffer ), p->windowName ) == 0 )
 				{
-					GetWindowName( hwnd, p->buffer );
-					if ( ::_tcsicmp( cstr_t( p->buffer ), p->windowName ) == 0 )
-					{
-						p->hwnd = hwnd;
-						return FALSE;
-					}
+					p->hwnd = hwnd;
+					p->found = true;
+					return FALSE;
 				}
 			}
 
 			// Search recursively until you finish finding or enumerating.
-			::EnumChildWindows( hwnd, &EnumChildWindowsProc, lParam );
+			if ( !p->found )
+				::EnumChildWindows( hwnd, &EnumChildWindowsProc, lParam );
 
-			if ( p->hwnd != null )
-				return FALSE;
-
-			return TRUE;
+			return ( p->found ) ? FALSE : TRUE;
 		}
 			
 		BOOL CALLBACK EnumWindowsProc(
@@ -848,43 +824,36 @@ namespace mycpp
 			dword pid;
 			FINDWINDOWINFO* p = pointer_int_cast< FINDWINDOWINFO* >( lParam );
 
-			// First, search from the parent window
 			::GetWindowThreadProcessId( hwnd, &pid );
 			if ( pid == p->pid )
 			{
-				GetWindowClassName( hwnd, p->buffer );
-				if ( ::_tcsicmp( cstr_t( p->buffer ), p->className ) == 0 )
-				{
-					GetWindowName( hwnd, p->buffer );
-					if ( ::_tcsicmp( cstr_t( p->buffer ), p->windowName ) == 0 )
-					{
-						p->hwnd = hwnd;
-						return FALSE;
-					}
-				}
+				if ( EnumChildWindowsProc( hwnd, lParam ) == FALSE )
+					return FALSE;
+
+				// If not found, also look for child windows.
+				::EnumChildWindows( hwnd, &EnumChildWindowsProc, lParam );
 			}
 
-			// If not found, also look for child windows.
-			::EnumChildWindows( hwnd, &EnumChildWindowsProc, lParam );
-
-			if ( p->hwnd != null )
-				return FALSE;
-
-			return TRUE;
+			return ( p->found ) ? FALSE : TRUE;
 		}
 	}
 
 	string_t Window::Text() const
 	{
-		vchar_t buffer;
-		GetWindowName( m_hwnd, buffer );
+		long_t nLength = ::SendMessage( m_hwnd, WM_GETTEXTLENGTH, 0, 0 );
+		vchar_t buffer( nLength + 1 );
+
+		::SendMessage( m_hwnd, WM_GETTEXT, numeric_cast< WPARAM >( buffer.size() ), reinterpret_cast< LPARAM >( cstr_t( buffer ) ) );
+
 		return cstr_t( buffer );
 	}
 
 	string_t Window::Text( const string_t& text )
 	{
 		string_t old = this->Text();
-		::SetWindowText( m_hwnd, text.c_str() );
+
+		this->Send( WM_SETTEXT, 0, reinterpret_cast< long_t >( text.c_str() ) );
+
 		return old;
 	}
 
@@ -901,7 +870,9 @@ namespace mycpp
 	string_t Window::ClassName() const
 	{
 		vchar_t buffer;
+
 		GetWindowClassName( m_hwnd, buffer );
+
 		return cstr_t( buffer );
 	}
 
@@ -940,7 +911,7 @@ namespace mycpp
 			this->Send( WM_CLOSE, 0, 0 );
 	}
 
-	wndptr_t FindProcessWindow( const Process::Ptr& process, const string_t& wndClassName, const string_t& wndName )
+	wndptr_t FindProcessWindow( const processptr_t& process, const string_t& wndClassName, const string_t& wndName )
 	{
 		if ( !process )
 			return null;
@@ -951,11 +922,15 @@ namespace mycpp
 			process->GetId(),
 			wndClassName.c_str(),
 			wndName.c_str(),
-			std::move( vchar_t( FINDWINDOWINFO::BUFFER_SIZE ) )
+			std::move( vchar_t( FINDWINDOWINFO::BUFFER_SIZE ) ),
+			false
 		};
 
 		::EnumWindows( &EnumWindowsProc, pointer_int_cast< LPARAM >( &fwi ) );
-		
+
+		if ( !fwi.found )
+			return null;
+
 		return std::make_shared< Window >( fwi.hwnd );
 	}
 
