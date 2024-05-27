@@ -8,7 +8,7 @@
 #endif
 #include <windows.h>
 
-namespace MyCpp
+namespace mycpp
 {
 	typedef INT_PTR int_t;
 	typedef UINT_PTR uint_t;
@@ -17,8 +17,8 @@ namespace MyCpp
 }
 
 #if defined( MYCPP_GLOBALTYPEDES )
-using MyCpp::int_t;
-using MyCpp::uint_t;
-using MyCpp::long_t;
-using MyCpp::ulong_t;
+using mycpp::int_t;
+using mycpp::uint_t;
+using mycpp::long_t;
+using mycpp::ulong_t;
 #endif

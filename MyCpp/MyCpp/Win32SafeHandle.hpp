@@ -3,7 +3,7 @@
 #include "MyCpp/Base.hpp"
 #include "MyCpp/Win32Base.hpp"
 
-namespace MyCpp
+namespace mycpp
 {
 	typedef HANDLE handle_t;
 	typedef HKEY hkey_t;
@@ -96,15 +96,15 @@ namespace MyCpp
 }
 
 #if defined( MYCPP_GLOBALTYPEDES )
-using MyCpp::handle_t;
-using MyCpp::hkey_t;
-using MyCpp::sc_handle_t;
-using MyCpp::scoped_handle_t;
-using MyCpp::shared_handle_t;
-using MyCpp::scoped_generic_handle;
-using MyCpp::scoped_reg_handle;
-using MyCpp::scoped_svc_handle;
-using MyCpp::shared_generic_handle;
-using MyCpp::shared_reg_handle;
-using MyCpp::shared_svc_handle;
+using mycpp::handle_t;
+using mycpp::hkey_t;
+using mycpp::sc_handle_t;
+using mycpp::scoped_handle_t;
+using mycpp::shared_handle_t;
+using mycpp::scoped_generic_handle;
+using mycpp::scoped_reg_handle;
+using mycpp::scoped_svc_handle;
+using mycpp::shared_generic_handle;
+using mycpp::shared_reg_handle;
+using mycpp::shared_svc_handle;
 #endif

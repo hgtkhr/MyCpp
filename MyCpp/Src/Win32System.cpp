@@ -20,7 +20,7 @@
 #define REGVALUE_ERROR( calledFunction, key, value, errorCode ) \
 	_T( "[%s()] %s(\"%s\\%s\") Failed : 0x%08x" ), _T( __FUNCTION__ ), _T( calledFunction ), ( key ), ( value ), ( errorCode )
 
-namespace MyCpp
+namespace mycpp
 {
 	constexpr dword PROCESS_STANDARD_RIGHTS = STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE;
 	constexpr dword PROCESS_LIMITED_RIGHTS = PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE;

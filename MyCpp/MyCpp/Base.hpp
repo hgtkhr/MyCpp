@@ -26,7 +26,7 @@
 
 #include "IntCast.hpp"
 
-namespace MyCpp
+namespace mycpp
 {
 	typedef TCHAR char_t;
 
@@ -118,24 +118,20 @@ namespace MyCpp
 }
 
 #if defined( MYCPP_GLOBALTYPEDES )
-using MyCpp::null;
-using MyCpp::byte;
-using MyCpp::char_t;
-using MyCpp::dword;
-using MyCpp::longlong;
-using MyCpp::qword;
-using MyCpp::string_t;
-using MyCpp::uchar;
-using MyCpp::uint;
-using MyCpp::ulonglong;
-using MyCpp::ulong;
-using MyCpp::ushort;
-using MyCpp::vchar;
-using MyCpp::vchar_t;
-using MyCpp::vwchar;
-using MyCpp::word;
-#endif
-
-#if defined(MYCPP_SHORT_NAMESPACE)
-namespace mpp = MyCpp;
+using mycpp::null;
+using mycpp::byte;
+using mycpp::char_t;
+using mycpp::dword;
+using mycpp::longlong;
+using mycpp::qword;
+using mycpp::string_t;
+using mycpp::uchar;
+using mycpp::uint;
+using mycpp::ulonglong;
+using mycpp::ulong;
+using mycpp::ushort;
+using mycpp::vchar;
+using mycpp::vchar_t;
+using mycpp::vwchar;
+using mycpp::word;
 #endif

@@ -1,4 +1,3 @@
 #pragma once
 #define MYCPP_GLOBALTYPEDES 1
-// #define MYCPP_NOAUTOLINKLIB
-#define MYCPP_SHORT_NAMESPACE 1
+// #define MYCPP_NOAUTOLINKLIB 1

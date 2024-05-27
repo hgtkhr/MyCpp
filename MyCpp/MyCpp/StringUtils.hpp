@@ -4,7 +4,7 @@
 #include <algorithm>
 #include "MyCpp/Base.hpp"
 
-namespace MyCpp
+namespace mycpp
 {
 	namespace Details
 	{

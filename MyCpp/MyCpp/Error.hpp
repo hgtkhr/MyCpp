@@ -14,7 +14,7 @@
 #define ERROR_MSG( msg, ... ) \
 	_T( "[%s()] " ## msg ), _T( __FUNCTION__ ), __VA_ARGS__
 
-namespace MyCpp
+namespace mycpp
 {
 	namespace Details
 	{

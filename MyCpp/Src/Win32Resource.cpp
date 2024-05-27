@@ -5,7 +5,7 @@
 #pragma comment( lib, "gdi32.lib" )
 #pragma comment( lib, "user32.lib" )
 
-namespace MyCpp
+namespace mycpp
 {
 	std::pair< void*, std::size_t > GetRawResourceData( handle_t module_handle, const char_t* type, const char_t* name, word language )
 	{
