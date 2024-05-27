@@ -49,7 +49,7 @@ namespace mycpp
 
 	typedef std::basic_string< char_t > string_t;
 
-	namespace Details
+	namespace details
 	{
 		class Null
 		{
@@ -83,20 +83,20 @@ namespace mycpp
 
 		template < typename T >
 		[[nodiscard]]
-		constexpr bool operator == ( const T& value, const Details::Null& )
+		constexpr bool operator == ( const T& value, const details::Null& )
 		{
 			return ( value == static_cast< T >( null ) );
 		}
 
 		template < typename T >
 		[[nodiscard]]
-		constexpr bool operator != ( const T& value, const Details::Null& )
+		constexpr bool operator != ( const T& value, const details::Null& )
 		{
 			return ( value != static_cast< T >( null ) );
 		}
 	}
 
-	constexpr Details::Null null;
+	constexpr details::Null null;
 
 	template < typename T, std::size_t N >
 	inline constexpr std::size_t count_of( T( & )[N] )

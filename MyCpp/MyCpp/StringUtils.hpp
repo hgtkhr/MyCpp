@@ -6,7 +6,7 @@
 
 namespace mycpp
 {
-	namespace Details
+	namespace details
 	{
 		std::size_t XStrToYStr( const char* from, std::size_t length, wchar_t* to, std::size_t capacity );
 		std::size_t XStrToYStr( const wchar_t* from, std::size_t length, char* to, std::size_t capacity );
@@ -51,7 +51,7 @@ namespace mycpp
 				return 0;
 
 			std::size_t len = ( m_length >= size ) ? size - 1 : m_length;
-			len = Details::XStrToYStr( m_source, len, to, size );
+			len = details::XStrToYStr( m_source, len, to, size );
 			to[len] = CharTo();
 
 			return len;
@@ -59,7 +59,7 @@ namespace mycpp
 
 		std::size_t requires_size() const
 		{
-			return Details::XStrToYStr( m_source, m_length, static_cast< CharTo* >( null ), 0 ) + 1;
+			return details::XStrToYStr( m_source, m_length, static_cast< CharTo* >( null ), 0 ) + 1;
 		}
 	private:
 		const CharFrom* m_source = null;
@@ -114,7 +114,7 @@ namespace mycpp
 		return value.c_str();
 	}
 
-	namespace Details
+	namespace details
 	{
 		template < typename ... Args >
 		inline int vcsprintf( vchar& result, const char* fmt, const Args& ... args )
@@ -150,7 +150,7 @@ namespace mycpp
 	{
 		std::vector< charT > result;
 
-		int r = Details::vcsprintf( result, fmt, args ... );
+		int r = details::vcsprintf( result, fmt, args ... );
 		if ( r == -1 )
 			throw std::runtime_error( "vcsprintf" );
 
@@ -162,7 +162,7 @@ namespace mycpp
 	{
 		std::vector< charT > result;
 
-		int r = Details::vcsprintf( result, fmt, args ... );
+		int r = details::vcsprintf( result, fmt, args ... );
 		if ( r == -1 )
 			throw std::runtime_error( "strprintf" );
 

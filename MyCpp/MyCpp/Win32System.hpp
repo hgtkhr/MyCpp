@@ -25,7 +25,7 @@ namespace mycpp
 
 	csptr_t CreateCriticalSection( uint spinCount = CSSPIN_AUTO );
 
-	namespace Details
+	namespace details
 	{
 		struct CriticalSectionExit
 		{
@@ -53,8 +53,8 @@ namespace mycpp
 		};
 	}
 
-	typedef scoped_handle_t< HANDLE, Details::MutexDeleter > mutex_t;
-	typedef std::unique_ptr< CRITICAL_SECTION, Details::CriticalSectionExit > cslock_t;
+	typedef scoped_handle_t< HANDLE, details::MutexDeleter > mutex_t;
+	typedef std::unique_ptr< CRITICAL_SECTION, details::CriticalSectionExit > cslock_t;
 
 	std::pair< dword, mutex_t > TryLockMutex( const string_t& name, bool waitForGetOwnership );
 	cslock_t TryLockCriticalSection( CRITICAL_SECTION& csObj );
@@ -111,7 +111,7 @@ namespace mycpp
 	void SetRegString( hkey_t parentKey, const string_t& subKey, const string_t& valueName, const string_t& value );
 	void SetRegBinary( hkey_t parentKey, const string_t& subKey, const string_t& valueName, uint type, const void* ptr, uint size );
 
-	namespace Details
+	namespace details
 	{
 		// qword - 64bit unsigned
 		template < typename Xword >
@@ -135,7 +135,7 @@ namespace mycpp
 	template < typename Xword >
 	inline Xword GetRegXword( hkey_t parentKey, const string_t& subKey, const string_t& valueName )
 	{
-		return Details::GetRegXword< Xword >( parentKey, subKey, valueName );
+		return details::GetRegXword< Xword >( parentKey, subKey, valueName );
 	}
 
 	inline void SetRegXword( hkey_t parentKey, const string_t& subKey, const string_t& valueName, dword value )
@@ -262,7 +262,7 @@ namespace mycpp
 	void SetIniString( const path_t& file, const string_t& section, const string_t& name, const string_t& value );
 	void SetIniBinary( const path_t& file, const string_t& section, const string_t& name, const void* ptr, uint size );
 
-	namespace Details
+	namespace details
 	{
 		// unsigned
 		template < typename Int>
@@ -366,31 +366,31 @@ namespace mycpp
 	template < typename Int >
 	inline Int GetIniInt( const path_t& file, const string_t& section, const string_t& name )
 	{
-		return Details::GetIniInt< Int >( file, section, name );
+		return details::GetIniInt< Int >( file, section, name );
 	}
 
 	template < typename Xword >
 	inline Xword GetIniXword( const path_t& file, const string_t& section, const string_t& name )
 	{
-		return Details::GetIniXword< Xword >( file, section, name );
+		return details::GetIniXword< Xword >( file, section, name );
 	}
 
 	template < typename FloatType >
 	inline FloatType GetIniFloat( const path_t& file, const string_t& section, const string_t& name )
 	{
-		return static_cast< FloatType >( Details::GetIniDouble( file, section, name ) );
+		return static_cast< FloatType >( details::GetIniDouble( file, section, name ) );
 	}
 
 	template < typename DataType >
 	inline bool GetIniData( const path_t& file, const string_t& section, const string_t& name, DataType& data )
 	{
-		return Details::GetIniData( file, section, name, data );
+		return details::GetIniData( file, section, name, data );
 	}
 
 	template < typename Int >
 	inline void SetIniInt( const path_t& file, const string_t& section, const string_t& name, Int value )
 	{
-		Details::SetIniInt( file, section, name, value );
+		details::SetIniInt( file, section, name, value );
 	}
 
 	template < typename FloatType >
@@ -402,13 +402,13 @@ namespace mycpp
 	template < typename DataType >
 	inline void SetIniData( const path_t& file, const string_t& section, const string_t& name, const DataType& data )
 	{
-		Details::SetIniData( file, section, name, data );
+		details::SetIniData( file, section, name, data );
 	}
 
 	template < typename Xword >
 	inline void SetIniXword( const path_t& file, const string_t& section, const string_t& name, Xword value )
 	{
-		Details::SetIniXword( file, section, name, value );
+		details::SetIniXword( file, section, name, value );
 	}
 }
 

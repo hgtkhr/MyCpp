@@ -7,7 +7,7 @@
 
 namespace mycpp
 {
-	namespace Details
+	namespace details
 	{
 		// unsigned int -> pointer
 		template 
@@ -146,12 +146,12 @@ namespace mycpp
 	template < typename T, typename U >
 	inline T numeric_cast( U value )
 	{
-		return Details::trunc_over_numeric_limits< T >( value );
+		return details::trunc_over_numeric_limits< T >( value );
 	}
 
 	template < typename T, typename U >
 	inline T pointer_int_cast( U value )
 	{
-		return Details::reinterpret_pointer< T >( value );
+		return details::reinterpret_pointer< T >( value );
 	}
 }

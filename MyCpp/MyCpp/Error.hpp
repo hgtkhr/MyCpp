@@ -16,7 +16,7 @@
 
 namespace mycpp
 {
-	namespace Details
+	namespace details
 	{
 		template < typename charT >
 		class safe_text_buffer
@@ -112,21 +112,21 @@ namespace mycpp
 	template < typename ExceptionType, typename ... Args >
 	inline void exception( const char_t* fmt, const Args& ... args )
 	{
-		Details::safe_text_buffer< char > message;
-		Details::CreateErrorMessage( message, fmt, printf_arg( args ) ... );
-		Details::ThrowException< ExceptionType >( message.get().first );
+		details::safe_text_buffer< char > message;
+		details::CreateErrorMessage( message, fmt, printf_arg( args ) ... );
+		details::ThrowException< ExceptionType >( message.get().first );
 	}
 
 	template < typename ExceptionType >
 	inline void exception( const ExceptionType& e )
 	{
-		Details::ThrowException< ExceptionType >( e );
+		details::ThrowException< ExceptionType >( e );
 	}
 
 	template < typename Notifer >
 	inline void alert( const char* what, Notifer notfier )
 	{
-		Details::safe_text_buffer< char_t > message;
+		details::safe_text_buffer< char_t > message;
 		auto converter = narrow_wide_converter< char_t >( what );
 		auto mem = message.get( converter.requires_size() );
 

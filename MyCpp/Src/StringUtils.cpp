@@ -4,7 +4,7 @@
 
 namespace mycpp
 {
-	namespace Details
+	namespace details
 	{
 		constexpr std::size_t SINTMAX = std::numeric_limits< int >::max();
 

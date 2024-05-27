@@ -39,7 +39,7 @@ namespace mycpp
 
 	typedef HANDLE heaphadle_t;
 
-	namespace Details
+	namespace details
 	{
 		struct heapmem_header
 		{
@@ -63,7 +63,7 @@ namespace mycpp
 		{
 			if ( p != null )
 			{
-				Details::heapmem_header* hdr = Details::GetHeapMemoryHeader( p );
+				details::heapmem_header* hdr = details::GetHeapMemoryHeader( p );
 				heaphadle_t hHeap = hdr->hHeap;
 
 				::HeapFree( hHeap, 0, hdr );
@@ -106,7 +106,7 @@ namespace mycpp
 	template < typename T >
 	inline T* hpallocate( dword flags, std::size_t size, heaphadle_t hheap = ::GetProcessHeap() )
 	{
-		Details::heapmem_header* hdr = malloc_func_adapter< Details::heapmem_header* >( &::HeapAlloc, hheap, flags, sizeof( heapmem_header ) + size );
+		details::heapmem_header* hdr = malloc_func_adapter< details::heapmem_header* >( &::HeapAlloc, hheap, flags, sizeof( heapmem_header ) + size );
 		hdr->hHeap = hheap;
 		return reinterpret_cast< T* >( hdr->data );
 	}
@@ -191,7 +191,7 @@ namespace mycpp
 
 	inline handle_t get_heap_memory_handle( void* ptr )
 	{
-		return Details::GetHeapMemoryHeader( ptr )->hHeap;
+		return details::GetHeapMemoryHeader( ptr )->hHeap;
 	}
 }
 
