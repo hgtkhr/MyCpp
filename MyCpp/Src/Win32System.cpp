@@ -436,7 +436,7 @@ namespace mycpp
 			::GetTokenInformation( processToken.get(), TokenUser, null, 0, &bytes );
 
 			auto tokenUser = make_scoped_local_memory< TOKEN_USER >( LPTR, bytes );
-			if ( ::GetTokenInformation( processToken.get(), TokenUser, tokenUser.get(), bytes, &bytes ) )
+			if ( ::GetTokenInformation( processToken.get(), TokenUser, tokenUser.get(), bytes, &bytes ) != FALSE )
 			{
 				if ( ::IsValidSid( tokenUser->User.Sid ) != FALSE )
 				{
