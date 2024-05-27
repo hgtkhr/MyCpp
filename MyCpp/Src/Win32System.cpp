@@ -93,7 +93,7 @@ namespace mycpp
 			auto current = Process::GetCurrent()->GetSid();
 			auto target = process->GetSid();
 
-			if ( ::EqualSid( current.get(), target.get() ) )
+			if ( ::EqualSid( current.get(), target.get() ) != FALSE )
 				return process;
 		}
 
@@ -136,7 +136,7 @@ namespace mycpp
 			std::vector< dword > pids( 400 );
 
 			adaptive_load( pids, pids.size(),
-						   [&maxIndex] ( dword* pn, std::size_t n )
+				[&maxIndex] ( dword* pn, std::size_t n )
 			{
 				dword size;
 				::EnumProcesses( pn, numeric_cast< dword >( n * sizeof( dword ) ), &size );
@@ -165,10 +165,10 @@ namespace mycpp
 				if ( ph != null )
 				{
 					adaptive_load( szProcessPath, szProcessPath.size(),
-									[&ph] ( char_t* s, std::size_t n )
+						[&ph] ( char_t* s, std::size_t n )
 					{
 						DWORD size = numeric_cast< DWORD >( n );
-						if ( ::QueryFullProcessImageName( ph, 0, s, &size ) )
+						if ( ::QueryFullProcessImageName( ph, 0, s, &size ) != FALSE )
 							return size + 1;
 						return 0UL;
 					} );
@@ -204,10 +204,10 @@ namespace mycpp
 					if ( ph == null )
 						ph = ::OpenProcess( accessMode | PROCESS_LIMITED_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pe32.th32ProcessID );
 					if ( ph != null )
-						return GetProcess( pe32.th32ProcessID );
+						return GetProcess( ph );
 				}
 			}
-			while ( ::Process32Next( processSnapshot.get(), &pe32 ) );
+			while ( ::Process32Next( processSnapshot.get(), &pe32 ) != FALSE );
 
 			return null;
 		}
@@ -288,9 +288,7 @@ namespace mycpp
 		mutex_t mutex( ::CreateMutex( null, TRUE, name.c_str() ) );
 		dword lastError = ::GetLastError();
 
-		if ( mutex 
-			&& lastError == ERROR_ALREADY_EXISTS 
-			&& waitForGetOwnership )
+		if ( mutex && lastError == ERROR_ALREADY_EXISTS && waitForGetOwnership )
 		{
 			::WaitForSingleObject( mutex.get(), INFINITE );
 			lastError = ::GetLastError();
@@ -354,7 +352,6 @@ namespace mycpp
 
 		~Data();
 
-		const ProcessInformation& GetPrimaryThreadData() const;
 		const ProcessInformation& GetProcessData() const;
 		const path_t& GetProcessFileName() const;
 		const string_t& GetProcessBaseName() const;
@@ -371,12 +368,10 @@ namespace mycpp
 
 	inline Process::Data::~Data()
 	{
-		if ( m_process.hProcess != null
-			&& m_process.hProcess != ::GetCurrentProcess() )
+		if ( m_process.hProcess != null	&& m_process.hProcess != ::GetCurrentProcess() )
 			::CloseHandle( m_process.hProcess );
 
-		if ( m_process.prihThread != null
-			&& m_process.prihThread != ::GetCurrentThread() )
+		if ( m_process.prihThread != null && m_process.prihThread != ::GetCurrentThread() )
 			::CloseHandle( m_process.prihThread );
 	}
 
@@ -397,7 +392,7 @@ namespace mycpp
 				[this] ( char_t* s, std::size_t n )
 			{
 				dword size = numeric_cast< dword >( n );
-				if ( ::QueryFullProcessImageName( m_process.hProcess, 0, s, &size ) )
+				if ( ::QueryFullProcessImageName( m_process.hProcess, 0, s, &size ) != FALSE )
 					return size + 1;
 				return 0UL;
 			} );
@@ -450,7 +445,7 @@ namespace mycpp
 
 					::CopySid( sidLength, psid.get(), tokenUser->User.Sid);
 
-					if ( ::IsValidSid( psid.get() ) )
+					if ( ::IsValidSid( psid.get() ) != FALSE )
 						return psid;
 				}
 			}
@@ -472,7 +467,7 @@ namespace mycpp
 			PROCESSENTRY32 processEntry;
 			processEntry.dwSize = Fill0( processEntry );
 
-			if ( ::Process32First( snapshot.get(), &processEntry ) )
+			if ( ::Process32First( snapshot.get(), &processEntry ) != FALSE )
 			{
 				do
 				{
@@ -489,7 +484,7 @@ namespace mycpp
 							std::move( Process::Data( { process.release(), null, processEntry.th32ParentProcessID, 0 } ) ) );
 					}
 				}
-				while ( ::Process32Next( snapshot.get(), &processEntry ) );
+				while ( ::Process32Next( snapshot.get(), &processEntry ) != FALSE );
 			}
 		}
 
@@ -555,7 +550,7 @@ namespace mycpp
 			{
 				THREADENTRY32 thinfo;
 				thinfo.dwSize = Fill0( thinfo );
-				if ( ::Thread32First( snapshot.get(), &thinfo ) )
+				if ( ::Thread32First( snapshot.get(), &thinfo ) != FALSE )
 				{
 					do
 					{
@@ -568,7 +563,7 @@ namespace mycpp
 								::ResumeThread( thread.get() );
 						}
 					}
-					while ( ::Thread32Next( snapshot.get(), &thinfo ) );
+					while ( ::Thread32Next( snapshot.get(), &thinfo ) != FALSE );
 				}
 			}
 		}
