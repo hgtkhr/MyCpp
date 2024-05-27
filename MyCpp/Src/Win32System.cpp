@@ -193,21 +193,21 @@ namespace mycpp
 			if ( processSnapshot.get() == INVALID_HANDLE_VALUE )
 				return null;
 
-			if ( ::Process32First( processSnapshot.get(), &pe32 ) == FALSE )
-				return null;
-
-			do
+			if ( ::Process32First( processSnapshot.get(), &pe32 ) != FALSE )
 			{
-				if ( ::_tcsicmp( pe32.szExeFile, searchFileName.c_str() ) == 0 )
+				do
 				{
-					handle_t ph = ::OpenProcess( accessMode | PROCESS_STANDARD_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pe32.th32ProcessID );
-					if ( ph == null )
-						ph = ::OpenProcess( accessMode | PROCESS_LIMITED_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pe32.th32ProcessID );
-					if ( ph != null )
-						return GetProcess( ph );
+					if ( ::_tcsicmp( pe32.szExeFile, searchFileName.c_str() ) == 0 )
+					{
+						handle_t ph = ::OpenProcess( accessMode | PROCESS_STANDARD_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pe32.th32ProcessID );
+						if ( ph == null )
+							ph = ::OpenProcess( accessMode | PROCESS_LIMITED_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pe32.th32ProcessID );
+						if ( ph != null )
+							return GetProcess( ph );
+					}
 				}
+				while ( ::Process32Next( processSnapshot.get(), &pe32 ) != FALSE );
 			}
-			while ( ::Process32Next( processSnapshot.get(), &pe32 ) != FALSE );
 
 			return null;
 		}
@@ -460,32 +460,32 @@ namespace mycpp
 	{
 		scoped_generic_handle snapshot( ::CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 ) );
 
-		if ( snapshot )
+		if ( snapshot.get() == INVALID_HANDLE_VALUE )
+			return null;
+
+		dword processId = m_data->GetProcessData().processId;
+
+		PROCESSENTRY32 processEntry;
+		processEntry.dwSize = Fill0( processEntry );
+
+		if ( ::Process32First( snapshot.get(), &processEntry ) != FALSE )
 		{
-			dword processId = m_data->GetProcessData().processId;
-
-			PROCESSENTRY32 processEntry;
-			processEntry.dwSize = Fill0( processEntry );
-
-			if ( ::Process32First( snapshot.get(), &processEntry ) != FALSE )
+			do
 			{
-				do
+				if ( processEntry.th32ProcessID == processId )
 				{
-					if ( processEntry.th32ProcessID == processId )
+					scoped_generic_handle process( ::OpenProcess( PROCESS_STANDARD_RIGHTS, FALSE, processEntry.th32ParentProcessID ) );
+					if ( !process )
 					{
-						scoped_generic_handle process( ::OpenProcess( PROCESS_STANDARD_RIGHTS, FALSE, processEntry.th32ParentProcessID ) );
+						process = make_scoped_handle( ::OpenProcess( PROCESS_LIMITED_RIGHTS, FALSE, processEntry.th32ParentProcessID ) );
 						if ( !process )
-						{
-							process = make_scoped_handle( ::OpenProcess( PROCESS_LIMITED_RIGHTS, FALSE, processEntry.th32ParentProcessID ) );
-							if ( !process )
-								return null;
-						}
-						return std::make_shared< Process >(
-							std::move( Process::Data( { process.release(), null, processEntry.th32ParentProcessID, 0 } ) ) );
+							return null;
 					}
+					return std::make_shared< Process >(
+						std::move( Process::Data( { process.release(), null, processEntry.th32ParentProcessID, 0 } ) ) );
 				}
-				while ( ::Process32Next( snapshot.get(), &processEntry ) != FALSE );
 			}
+			while ( ::Process32Next( snapshot.get(), &processEntry ) != FALSE );
 		}
 
 		return null;
@@ -546,25 +546,27 @@ namespace mycpp
 		inline void SuspendProcess( dword processId, bool suspend )
 		{
 			scoped_generic_handle snapshot ( ::CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, processId ) );
-			if ( snapshot )
+	
+			if ( snapshot.get() != INVALID_HANDLE_VALUE )
+				return ; // abort function.
+			
+			THREADENTRY32 thinfo;
+			thinfo.dwSize = Fill0( thinfo );
+
+			if ( ::Thread32First( snapshot.get(), &thinfo ) != FALSE )
 			{
-				THREADENTRY32 thinfo;
-				thinfo.dwSize = Fill0( thinfo );
-				if ( ::Thread32First( snapshot.get(), &thinfo ) != FALSE )
+				do
 				{
-					do
+					scoped_generic_handle thread( ::OpenThread( THREAD_SUSPEND_RESUME, FALSE, thinfo.th32ThreadID ) );
+					if ( thread )
 					{
-						scoped_generic_handle thread( ::OpenThread( THREAD_SUSPEND_RESUME, FALSE, thinfo.th32ThreadID ) );
-						if ( thread )
-						{
-							if ( suspend )
-								::SuspendThread( thread.get() );
-							else
-								::ResumeThread( thread.get() );
-						}
+						if ( suspend )
+							::SuspendThread( thread.get() );
+						else
+							::ResumeThread( thread.get() );
 					}
-					while ( ::Thread32Next( snapshot.get(), &thinfo ) != FALSE );
 				}
+				while ( ::Thread32Next( snapshot.get(), &thinfo ) != FALSE );
 			}
 		}
 	}
