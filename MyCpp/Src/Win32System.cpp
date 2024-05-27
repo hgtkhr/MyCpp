@@ -438,7 +438,7 @@ namespace mycpp
 			auto tokenUser = make_scoped_local_memory< TOKEN_USER >( LPTR, bytes );
 			if ( ::GetTokenInformation( processToken.get(), TokenUser, tokenUser.get(), bytes, &bytes ) )
 			{
-				if ( ::IsValidSid( tokenUser->User.Sid ) )
+				if ( ::IsValidSid( tokenUser->User.Sid ) != FALSE )
 				{
 					dword sidLength = ::GetLengthSid( tokenUser->User.Sid );
 					PtrSID psid( lcallocate< SID >( LPTR, sidLength ), local_memory_deleter< SID >() );
