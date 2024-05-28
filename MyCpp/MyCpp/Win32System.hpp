@@ -233,6 +233,7 @@ namespace mycpp
 		long_t Post( uint msg, uint_t wparam, long_t lparam );
 
 		Ptr GetParent() const;
+		Ptr GetChild( const string_t& wndClassName, const string_t& wndName ) const;
 
 		void Close();
 

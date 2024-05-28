@@ -813,6 +813,23 @@ namespace mycpp
 			return ( p->found ) ? FALSE : TRUE;
 		}
 			
+		BOOL CALLBACK EnumChildWindowsProcEntry(
+			HWND hwnd,      // 子ウィンドウのハンドル
+			LPARAM lParam   // アプリケーション定義の値
+		)
+		{
+			FINDWINDOWINFO* p = pointer_int_cast< FINDWINDOWINFO* >( lParam );
+
+			// First check the first value.
+			if ( EnumChildWindowsProc( hwnd, lParam ) == FALSE )
+				return FALSE;
+
+			// If not found, also look for child windows.
+			::EnumChildWindows( hwnd, &EnumChildWindowsProc, lParam );
+
+			return ( p->found ) ? FALSE : TRUE;
+		}
+
 		BOOL CALLBACK EnumWindowsProc(
 			HWND hwnd,      // 親ウィンドウのハンドル
 			LPARAM lParam   // アプリケーション定義の値
@@ -824,6 +841,7 @@ namespace mycpp
 			::GetWindowThreadProcessId( hwnd, &pid );
 			if ( pid == p->pid )
 			{
+				// First check the first value.
 				if ( EnumChildWindowsProc( hwnd, lParam ) == FALSE )
 					return FALSE;
 
@@ -906,6 +924,26 @@ namespace mycpp
 	{
 		if ( ::IsWindow( m_hwnd ) != FALSE )
 			this->Send( WM_CLOSE, 0, 0 );
+	}
+
+	Window::Ptr Window::GetChild( const string_t& wndClassName, const string_t& wndName ) const
+	{
+		FINDWINDOWINFO fwi =
+		{
+			null,
+			0,
+			wndClassName.c_str(),
+			wndName.c_str(),
+			std::move( vchar_t( FINDWINDOWINFO::BUFFER_SIZE ) ),
+			false
+		};
+
+		::EnumChildWindows( this->GetHandle(), &EnumChildWindowsProcEntry, pointer_int_cast< LPARAM >( &fwi ));
+
+		if ( !fwi.found )
+			return null;
+
+		return std::make_shared< Window >( fwi.hwnd );
 	}
 
 	wndptr_t FindProcessWindow( const processptr_t& process, const string_t& wndClassName, const string_t& wndName )
