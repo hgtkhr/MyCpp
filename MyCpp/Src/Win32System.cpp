@@ -2,7 +2,7 @@
 #include "MyCpp/Error.hpp"
 #include "MyCpp/IntCast.hpp"
 
-#include <stack>
+#include <cstdlib>
 
 #include <Objbase.h>
 #include <shellapi.h>
@@ -24,10 +24,39 @@
 
 namespace mycpp
 {
-	constexpr dword PROCESS_STANDARD_RIGHTS = PROCESS_QUERY_INFORMATION | PROCESS_TERMINATE | SYNCHRONIZE;
-	constexpr dword PROCESS_LIMITED_RIGHTS = PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE | SYNCHRONIZE;
-	constexpr dword THREAD_STANDARD_RIGHTS = THREAD_QUERY_INFORMATION | THREAD_SUSPEND_RESUME | SYNCHRONIZE;
-	constexpr dword THREAD_LIMITED_RIGHTS = THREAD_QUERY_LIMITED_INFORMATION| THREAD_SUSPEND_RESUME | SYNCHRONIZE;
+	namespace
+	{
+		constexpr dword PROCESS_STANDARD_RIGHTS = PROCESS_QUERY_INFORMATION | PROCESS_TERMINATE | SYNCHRONIZE;
+		constexpr dword PROCESS_LIMITED_RIGHTS = PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE | SYNCHRONIZE;
+
+		handle_t DuplicatePrimaryThreadHandle();
+			
+		// Global variables are initialized at program startup,
+		// so the primary thread id should be returned.
+		const dword PROCESS_PRIMARY_THREAD_ID = ::GetCurrentThreadId();
+		const handle_t PROCESS_PRIMARY_THREAD_HANDLE = DuplicatePrimaryThreadHandle();
+
+		void CloseDuplicatedPrimaryThreadHandle()
+		{
+			::CloseHandle( PROCESS_PRIMARY_THREAD_HANDLE );
+		}
+
+		handle_t DuplicatePrimaryThreadHandle()
+		{
+			handle_t hPrimaryThread = null;
+
+			if ( ::GetCurrentThreadId() != PROCESS_PRIMARY_THREAD_ID )
+				exception< std::logic_error >( ERROR_MSG( "Do not call this function except at initialization time." ) );
+
+			BOOL r = ::DuplicateHandle( ::GetCurrentProcess(), ::GetCurrentThread(), ::GetCurrentProcess(), &hPrimaryThread, 0, TRUE, DUPLICATE_SAME_ACCESS );
+			if ( r == FALSE )
+				exception< std::runtime_error >( FUNC_ERROR_ID( "DuplicateHandle", ::GetLastError() ) );
+
+			std::atexit( &CloseDuplicatedPrimaryThreadHandle );
+
+			return hPrimaryThread;
+		}
+	}
 
 	path_t GetProgramModuleFileName( module_handle_t hmodule )
 	{
@@ -130,6 +159,16 @@ namespace mycpp
 			return std::filesystem::weakly_canonical( szSearchPath.data() );
 		}
 
+		inline handle_t OpenProcessOrLimitedRights( dword dwDesiredAccess, bool bInheritHandle, dword dwProcessId )
+		{
+			handle_t ph = ::OpenProcess( PROCESS_STANDARD_RIGHTS | dwDesiredAccess, ( bInheritHandle ) ? TRUE : FALSE, dwProcessId );
+
+			if ( ph == null )
+				ph = ::OpenProcess( PROCESS_LIMITED_RIGHTS | dwDesiredAccess, ( bInheritHandle ) ? TRUE : FALSE, dwProcessId );
+
+			return ph;
+		}
+
 		inline processptr_t FindProcessByFullPath( const path_t& fileName, bool inheritHandle, dword accessMode )
 		{
 			dword maxIndex = 0;
@@ -159,10 +198,7 @@ namespace mycpp
 
 			for ( const auto& pid : pids )
 			{
-				handle_t ph = ::OpenProcess( accessMode | PROCESS_STANDARD_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pid );
-				if ( ph == null )
-					ph = ::OpenProcess( accessMode | PROCESS_LIMITED_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pid );
-				if ( ph != null )
+				if ( auto ph = OpenProcessOrLimitedRights( accessMode | PROCESS_STANDARD_RIGHTS, inheritHandle, pid ) )
 				{
 					adaptive_load( szProcessPath, szProcessPath.size(),
 						[&ph] ( char_t* s, std::size_t n )
@@ -183,8 +219,8 @@ namespace mycpp
 
 		inline processptr_t FindProcessByFileName( const path_t& fileName, bool inheritHandle, dword accessMode )
 		{
-			PROCESSENTRY32 pe32;
-			pe32.dwSize = Fill0( pe32 );
+			PROCESSENTRY32 processEntry;
+			processEntry.dwSize = Fill0( processEntry );
 
 			string_t searchFileName = to_string_t( fileName );
 
@@ -193,20 +229,17 @@ namespace mycpp
 			if ( processSnapshot.get() == INVALID_HANDLE_VALUE )
 				return null;
 
-			if ( ::Process32First( processSnapshot.get(), &pe32 ) != FALSE )
+			if ( ::Process32First( processSnapshot.get(), &processEntry ) != FALSE )
 			{
 				do
 				{
-					if ( ::_tcsicmp( pe32.szExeFile, searchFileName.c_str() ) == 0 )
+					if ( ::_tcsicmp( processEntry.szExeFile, searchFileName.c_str() ) == 0 )
 					{
-						handle_t ph = ::OpenProcess( accessMode | PROCESS_STANDARD_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pe32.th32ProcessID );
-						if ( ph == null )
-							ph = ::OpenProcess( accessMode | PROCESS_LIMITED_RIGHTS, ( inheritHandle ) ? TRUE : FALSE, pe32.th32ProcessID );
-						if ( ph != null )
+						if ( auto ph = OpenProcessOrLimitedRights( accessMode | PROCESS_STANDARD_RIGHTS, inheritHandle, processEntry.th32ProcessID ) )
 							return GetProcess( ph );
 					}
 				}
-				while ( ::Process32Next( processSnapshot.get(), &pe32 ) != FALSE );
+				while ( ::Process32Next( processSnapshot.get(), &processEntry ) != FALSE );
 			}
 
 			return null;
@@ -342,8 +375,8 @@ namespace mycpp
 		{
 			handle_t hProcess;
 			dword processId;
-			handle_t prihThread;
-			dword priThreadId;
+			handle_t hThread;
+			dword threadId;
 		};
 
 		Data() = default;
@@ -371,8 +404,8 @@ namespace mycpp
 		if ( m_process.hProcess != null	&& m_process.hProcess != ::GetCurrentProcess() )
 			::CloseHandle( m_process.hProcess );
 
-		if ( m_process.prihThread != null && m_process.prihThread != ::GetCurrentThread() )
-			::CloseHandle( m_process.prihThread );
+		if ( m_process.hThread != null && m_process.hThread != ::GetCurrentThread() && m_process.hThread != PROCESS_PRIMARY_THREAD_HANDLE )
+			::CloseHandle( m_process.hThread );
 	}
 
 	inline const Process::Data::ProcessInformation& Process::Data::GetProcessData() const
@@ -474,14 +507,12 @@ namespace mycpp
 			{
 				if ( processEntry.th32ProcessID == processId )
 				{
-					scoped_generic_handle process( ::OpenProcess( PROCESS_STANDARD_RIGHTS, FALSE, processEntry.th32ParentProcessID ) );
+					scoped_generic_handle process( OpenProcessOrLimitedRights( PROCESS_STANDARD_RIGHTS, false, processEntry.th32ParentProcessID ) );
+
 					if ( !process )
-					{
-						process = make_scoped_handle( ::OpenProcess( PROCESS_LIMITED_RIGHTS, FALSE, processEntry.th32ParentProcessID ) );
-						if ( !process )
-							return null;
-					}
-					return std::make_shared< Process >(
+						return null;
+
+					return std::make_shared< Process >( 
 						std::move( Process::Data( { process.release(), null, processEntry.th32ParentProcessID, 0 } ) ) );
 				}
 			}
@@ -491,12 +522,91 @@ namespace mycpp
 		return null;
 	}
 
-	const Process* Process::GetCurrent()
+	Process* Process::GetCurrent()
 	{
-		static const Process currentProcess(
-			std::move( Process::Data( { ::GetCurrentProcess(), null, ::GetCurrentProcessId(), 0 } ) ) );
+		static Process currentProcess(
+			std::move( Process::Data( { ::GetCurrentProcess(), PROCESS_PRIMARY_THREAD_HANDLE, ::GetCurrentProcessId(), PROCESS_PRIMARY_THREAD_ID } ) ) );
 
 		return &currentProcess;
+	}
+
+	Process::Ptr Process::Create( const string_t& cmdline, const path_t& appCurrentDir, void* envVariables, int creationFlags, bool inheritHandle, int cmdShow )
+	{
+		bool inQuote = false;
+		bool isQuotedName = false;
+
+		string_t appName;
+
+		auto i = cmdline.begin();
+
+		for ( ; i != cmdline.end(); ++i )
+		{
+			if ( *i == _T( '"' ) )
+			{
+				inQuote = ( !inQuote );
+				if ( !isQuotedName )
+					isQuotedName = true;
+
+				continue;
+			}
+			else if ( !inQuote && _istspace( *i ) )
+			{
+				break;
+			}
+
+			appName += *i;
+		}
+
+		path_t appCurrent = ( !appCurrentDir.empty() ) ?
+			std::filesystem::absolute( appCurrentDir ) : GetCurrentLocation();
+
+		appName = to_string_t( ComplatePath( appName ) );
+
+		if ( !isQuotedName )
+		{
+			auto r = std::find_if( appName.begin(), appName.end(), &_istspace );
+			if ( r != appName.end() )
+				isQuotedName = true;
+		}
+
+		vchar_t cmdLineArgs;
+
+		if ( isQuotedName )
+			cmdLineArgs.push_back( _T( '"' ) );
+
+		std::copy( appName.begin(), appName.end(), std::back_inserter< vchar_t >( cmdLineArgs ) );
+
+		if ( isQuotedName )
+			cmdLineArgs.push_back( _T( '"' ) );
+
+		std::copy( i, cmdline.end(), std::back_inserter< vchar_t >( cmdLineArgs ) );
+
+		cmdLineArgs.push_back( char_t() );
+
+		STARTUPINFO si;
+
+		si.cb = Fill0( si );
+		si.dwFlags = STARTF_USESHOWWINDOW;
+		si.wShowWindow = cmdShow;
+
+		PROCESS_INFORMATION pi;
+
+		BOOL result = ::CreateProcess( appName.c_str()
+									   , cstr_t( cmdLineArgs )
+									   , null
+									   , null
+									   , inheritHandle
+									   , creationFlags
+									   , envVariables
+									   , to_string_t( appCurrent ).c_str()
+									   , &si
+									   , &pi );
+
+		if ( result == FALSE )
+			exception< std::runtime_error >( FUNC_ERROR_MSG( "CreateProcess", "Failed. CommandLine = '%s', (0x%08x)", cmdLineArgs, ::GetLastError() ) );
+
+		return std::make_shared< Process >(
+			std::move( Process::Data( pi ) ) );
 	}
 
 	string_t Process::GetName() const
@@ -516,7 +626,7 @@ namespace mycpp
 
 	handle_t Process::GetPrimaryThreadHandle() const
 	{
-		return m_data->GetProcessData().prihThread;
+		return m_data->GetProcessData().hThread;
 	}
 
 	dword Process::GetId() const
@@ -526,7 +636,7 @@ namespace mycpp
 
 	dword Process::GetPrimaryThreadId() const
 	{
-		return m_data->GetProcessData().priThreadId;
+		return m_data->GetProcessData().threadId;
 	}
 
 	dword Process::GetExitCode() const
@@ -607,16 +717,12 @@ namespace mycpp
 		if ( std::find( pids.begin(), pids.end(), pid) == pids.end() )
 			return null;
 
-		handle_t openedProcess = ::OpenProcess( PROCESS_STANDARD_RIGHTS, FALSE, pid );
-		if ( openedProcess == null )
-		{
-			openedProcess = ::OpenProcess( PROCESS_LIMITED_RIGHTS, FALSE, pid );
-			if ( openedProcess == null )
-				return null;
-		}
+		handle_t process = OpenProcessOrLimitedRights( PROCESS_STANDARD_RIGHTS, false, pid );
+		if ( process == null )
+			return null;
 
 		return std::make_shared< Process >( 
-			std::move( Process::Data( { openedProcess, null, pid, 0 } ) ) );
+			std::move( Process::Data( { process, null, pid, 0 } ) ) );
 	}
 
 	processptr_t GetProcess( handle_t hProcess )
@@ -636,85 +742,6 @@ namespace mycpp
 		} );
 
 		return szSearchPath.data();
-	}
-
-	processptr_t StartProcess( const string_t& cmdline, const path_t& appCurrentDir, void* envVariables, int creationFlags, bool inheritHandle,  int cmdShow )
-	{
-		bool inQuote = false;
-		bool isQuotedName = false;
-
-		string_t appName;
-
-		auto i = cmdline.begin();
-
-		for ( ; i != cmdline.end(); ++i )
-		{
-			if ( *i == _T( '"' ) )
-			{
-				inQuote = ( !inQuote );
-				if ( !isQuotedName )
-					isQuotedName = true;
-
-				continue;
-			}
-			else if ( !inQuote && _istspace( *i ) )
-			{
-				break;
-			}
-
-			appName += *i;
-		}
-
-		path_t appCurrent = ( !appCurrentDir.empty() ) ? 
-			std::filesystem::absolute( appCurrentDir ) : GetCurrentLocation();
-
-		appName = to_string_t( ComplatePath( appName ) );
-
-		if ( !isQuotedName )
-		{
-			auto r = std::find_if( appName.begin(), appName.end(), &_istspace );
-			if ( r != appName.end() )
-				isQuotedName = true;
-		}
-
-		vchar_t cmdLineArgs;
-
-		if ( isQuotedName )
-			cmdLineArgs.push_back( _T( '"' ) );
-
-		std::copy( appName.begin(), appName.end(), std::back_inserter< vchar_t >( cmdLineArgs ) );
-
-		if ( isQuotedName )
-			cmdLineArgs.push_back( _T( '"' ) );
-
-		std::copy( i, cmdline.end(), std::back_inserter< vchar_t >( cmdLineArgs ) );
-
-		cmdLineArgs.push_back( char_t() );
-
-		STARTUPINFO si;
-
-		si.cb = Fill0( si );
-		si.dwFlags = STARTF_USESHOWWINDOW;
-		si.wShowWindow = cmdShow;
-
-		PROCESS_INFORMATION pi;
-
-		BOOL result = ::CreateProcess( appName.c_str()
-									   , cstr_t( cmdLineArgs )
-									   , null
-									   , null
-									   , ( inheritHandle ) ? TRUE : FALSE
-									   , creationFlags
-									   , envVariables
-									   , to_string_t( appCurrent ).c_str()
-									   , &si
-									   , &pi );
-
-		if ( result == FALSE )
-			exception< std::runtime_error >( FUNC_ERROR_MSG( "CreateProcess", "Failed. CommandLine = '%s', (0x%08x)", cmdLineArgs, ::GetLastError() ) );
-
-		return std::make_shared< Process >(
-			std::move( Process::Data( pi ) ) );
 	}
 
 	int RunElevated( const path_t& file, const string_t& parameters, bool waitForExit, int cmdShow )

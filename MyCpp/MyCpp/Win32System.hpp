@@ -176,7 +176,8 @@ namespace mycpp
 		PtrSID GetSid() const;
 		Ptr GetParent() const;
 
-		static const Process* GetCurrent();
+		static Process* GetCurrent();
+		static Ptr Create( const string_t& cmdline, const path_t& appCurrentDir = null, void* envVariables = null, int creationFlags = 0, bool inheritHandle = false, int cmdShow = SW_SHOWDEFAULT );
 
 		void Terminate( int exitCode );
 		void Suspend();
@@ -253,8 +254,6 @@ namespace mycpp
 	processptr_t GetProcess( handle_t hProcess );
 	processptr_t OpenProcessByFileName( const path_t& fileName, bool inheritHandle = false, dword accessMode = 0 );
 	processptr_t OpenCuProcessByFileName( const path_t& fileName, bool inheritHandle = false, dword accessMode = 0 );
-
-	processptr_t StartProcess( const string_t& cmdline, const path_t& appCurrentDir = null, void* envVariables = null, int creationFlags = 0, bool inheritHandle = false,  int cmdShow = SW_SHOWDEFAULT );
 
 	int RunElevated( const path_t& file, const string_t& parameters = null, bool waitForExit = true, int cmdShow = SW_SHOWDEFAULT );
 
