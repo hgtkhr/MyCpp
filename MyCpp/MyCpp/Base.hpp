@@ -81,6 +81,8 @@ namespace mycpp
 			void operator & () const = delete;
 		};
 
+		constexpr Null null;
+
 		template < typename T >
 		[[nodiscard]]
 		constexpr bool operator == ( const T& value, const details::Null& )
@@ -96,7 +98,7 @@ namespace mycpp
 		}
 	}
 
-	constexpr details::Null null;
+	using details::null;
 
 	template < typename T, std::size_t N >
 	inline constexpr std::size_t count_of( T( & )[N] )
