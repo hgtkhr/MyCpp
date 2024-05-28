@@ -371,17 +371,11 @@ namespace mycpp
 	class Process::Data
 	{
 	public:
-		struct ProcessInformation
-		{
-			handle_t hProcess;
-			dword processId;
-			handle_t hThread;
-			dword threadId;
-		};
+		typedef PROCESS_INFORMATION ProcessInformation;
 
 		Data() = default;
 		Data( Data&& right ) noexcept = default;
-		Data( const PROCESS_INFORMATION& info );
+		Data( const ProcessInformation& info );
 
 		~Data();
 
@@ -395,8 +389,8 @@ namespace mycpp
 		mutable string_t m_baseName;
 	};
 
-	inline Process::Data::Data( const PROCESS_INFORMATION& info )
-		: m_process( { info.hProcess, info.dwProcessId, info.hThread, info.dwThreadId } )
+	inline Process::Data::Data( const ProcessInformation& info )
+		: m_process( info )
 	{}
 
 	inline Process::Data::~Data()
@@ -496,7 +490,7 @@ namespace mycpp
 		if ( snapshot.get() == INVALID_HANDLE_VALUE )
 			return null;
 
-		dword processId = m_data->GetProcessData().processId;
+		dword processId = m_data->GetProcessData().dwProcessId;
 
 		PROCESSENTRY32 processEntry;
 		processEntry.dwSize = Fill0( processEntry );
@@ -605,8 +599,7 @@ namespace mycpp
 		if ( result == FALSE )
 			exception< std::runtime_error >( FUNC_ERROR_MSG( "CreateProcess", "Failed. CommandLine = '%s', (0x%08x)", cmdLineArgs, ::GetLastError() ) );
 
-		return std::make_shared< Process >(
-			std::move( Process::Data( pi ) ) );
+		return std::make_shared< Process >( std::move( Data( pi ) ) );
 	}
 
 	string_t Process::GetName() const
@@ -631,18 +624,20 @@ namespace mycpp
 
 	dword Process::GetId() const
 	{
-		return m_data->GetProcessData().processId;
+		return m_data->GetProcessData().dwProcessId;
 	}
 
 	dword Process::GetPrimaryThreadId() const
 	{
-		return m_data->GetProcessData().threadId;
+		return m_data->GetProcessData().dwThreadId;
 	}
 
 	dword Process::GetExitCode() const
 	{
 		dword exitCode;
+
 		::GetExitCodeProcess( m_data->GetProcessData().hProcess, &exitCode );
+
 		return exitCode;
 	}
 
@@ -683,12 +678,12 @@ namespace mycpp
 
 	void Process::Suspend()
 	{
-		SuspendProcess( m_data->GetProcessData().processId, true );
+		SuspendProcess( m_data->GetProcessData().dwProcessId, true );
 	}
 
 	void Process::Resume()
 	{
-		SuspendProcess( m_data->GetProcessData().processId, false );
+		SuspendProcess( m_data->GetProcessData().dwProcessId, false );
 	}
 
 	dword Process::Wait( dword milliseconds, bool forInputIdle ) const
