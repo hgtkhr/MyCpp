@@ -140,11 +140,11 @@ namespace mycpp
 	};
 
 	template <>
-	struct safe_handle_closer< HFIND >
+	struct safe_handle_closer< hfind_t >
 	{
-		typedef HFIND pointer;
+		typedef hfind_t pointer;
 
-		void operator () ( HFIND h )
+		void operator () ( hfind_t h )
 		{
 			if ( h != nullhandle )
 				::FindClose( h );
