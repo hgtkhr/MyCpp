@@ -55,5 +55,8 @@
     <ClInclude Include="MyCpp\Win32Resource.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="MyCpp\String.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

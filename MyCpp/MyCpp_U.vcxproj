@@ -410,6 +410,7 @@
     <ClInclude Include="MyCpp\Error.hpp" />
     <ClInclude Include="MyCpp\IntCast.hpp" />
     <ClInclude Include="MyCpp\LinkLib.hpp" />
+    <ClInclude Include="MyCpp\String.hpp" />
     <ClInclude Include="MyCpp\StringUtils.hpp" />
     <ClInclude Include="MyCpp\Win32Base.hpp" />
     <ClInclude Include="MyCpp\Win32Memory.hpp" />
