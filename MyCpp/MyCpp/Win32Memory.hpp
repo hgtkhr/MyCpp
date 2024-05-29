@@ -106,7 +106,7 @@ namespace mycpp
 	template < typename T >
 	inline T* hpallocate( dword flags, std::size_t size, heaphadle_t hheap = ::GetProcessHeap() )
 	{
-		details::heapmem_header* hdr = malloc_func_adapter< details::heapmem_header* >( &::HeapAlloc, hheap, flags, sizeof( heapmem_header ) + size );
+		details::heapmem_header* hdr = malloc_func_adapter< details::heapmem_header* >( &::HeapAlloc, hheap, flags, sizeof( details::heapmem_header ) + size );
 		hdr->hHeap = hheap;
 		return reinterpret_cast< T* >( hdr->data );
 	}
