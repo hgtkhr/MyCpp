@@ -109,6 +109,7 @@ using mycpp::istring;
 using mycpp::wistring;
 using mycpp::u16istring;
 using mycpp::u32istring;
+using mycpp::istring_t;
 #if MYCPP_STDCPP_VERSION >= 202002L
 using mycpp::u8istring;
 #endif
