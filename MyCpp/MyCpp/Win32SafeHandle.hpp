@@ -11,6 +11,89 @@ namespace mycpp
 
 	const handle_t nullhandle = INVALID_HANDLE_VALUE;
 
+	class find_wrapper
+	{
+	public:
+		typedef HANDLE Handle;
+
+		find_wrapper( Handle hFind )
+			: m_hFind( m_hFind )
+		{}
+
+		find_wrapper() = default;
+		find_wrapper( const find_wrapper& other ) = default;
+		find_wrapper( find_wrapper&& other ) noexcept = default;
+
+		operator Handle () const
+		{
+			return m_hFind;
+		}
+
+		Handle get_handle() const
+		{
+			return m_hFind;
+		}
+
+		Handle* operator & ()
+		{
+			return &m_hFind;
+		}
+
+		const Handle* operator & () const
+		{
+			return &m_hFind;
+		}
+
+		find_wrapper& operator = ( Handle hFind )
+		{
+			m_hFind = hFind;
+		}
+
+		find_wrapper& operator = ( const find_wrapper& other ) = default;
+		find_wrapper& operator = ( find_wrapper&& other ) noexcept = default;
+	private:
+		Handle m_hFind = INVALID_HANDLE_VALUE;
+	};
+
+	[[nodiscard]]
+	inline bool operator == ( const find_wrapper& lhs, const find_wrapper& rhs )
+	{
+		return ( lhs.get_handle() == rhs.get_handle() );
+	}
+
+	[[nodiscard]]
+	inline bool operator != ( const find_wrapper& lhs, const find_wrapper& rhs )
+	{
+		return ( lhs.get_handle() != rhs.get_handle() );
+	}
+
+	[[nodiscard]]
+	inline bool operator == ( const find_wrapper& lhs, find_wrapper::Handle rhs )
+	{
+		return ( lhs.get_handle() == rhs );
+	}
+
+	[[nodiscard]]
+	inline bool operator != ( const find_wrapper& lhs, find_wrapper::Handle rhs )
+	{
+		return ( lhs.get_handle() != rhs );
+	}
+
+	[[nodiscard]]
+	constexpr bool operator == ( const find_wrapper& lhs, const details::Null& )
+	{
+		return ( lhs.get_handle() == null );
+	}
+
+	[[nodiscard]]
+	constexpr bool operator != ( const find_wrapper& lhs, const details::Null& )
+	{
+		return ( lhs.get_handle() != null );
+	}
+
+	typedef find_wrapper HFIND;
+	typedef HFIND hfind_t;
+
 	template < typename HandleType >
 	struct safe_handle_closer
 	{
@@ -53,6 +136,18 @@ namespace mycpp
 		{
 			if ( h != null )
 				::CloseServiceHandle( h );
+		}
+	};
+
+	template <>
+	struct safe_handle_closer< HFIND >
+	{
+		typedef HFIND pointer;
+
+		void operator () ( HFIND h )
+		{
+			if ( h != nullhandle )
+				::FindClose( h );
 		}
 	};
 
@@ -99,6 +194,8 @@ namespace mycpp
 using mycpp::handle_t;
 using mycpp::hkey_t;
 using mycpp::sc_handle_t;
+using mycpp::HFIND;
+using mycpp::hfind_t;
 using mycpp::scoped_handle_t;
 using mycpp::shared_handle_t;
 using mycpp::scoped_generic_handle;

@@ -60,6 +60,18 @@ namespace mycpp
 	inline bool operator != ( const hcursor_wrapper& lhs, const hcursor_wrapper& rhs )
 	{
 		return ( lhs.get_handle() != rhs.get_handle() );
+
+	}
+	[[nodiscard]]
+	inline bool operator == ( const hcursor_wrapper& lhs, hcursor_wrapper::Handle rhs )
+	{
+		return ( lhs.get_handle() == rhs );
+	}
+
+	[[nodiscard]]
+	inline bool operator != ( const hcursor_wrapper& lhs, hcursor_wrapper::Handle rhs )
+	{
+		return ( lhs.get_handle() != rhs );
 	}
 
 	[[nodiscard]]
