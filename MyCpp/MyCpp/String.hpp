@@ -86,9 +86,15 @@ namespace mycpp
 	using wistring = basic_istring< wchar_t >;
 	using u16istring = basic_istring< char16_t >;
 	using u32istring = basic_istring< char32_t >;
+	using istring_t = basic_istring< char_t >;
 #if MYCPP_STDCPP_VERSION >= 202002L
 	using u8istring = basic_istring< char8_t >;
 #endif
+	template < typename CharT, typename Traits, typename Allocator >
+	inline std::basic_string< CharT, ichar_traits< CharT >, Allocator > to_istring( const std::basic_string< CharT, Traits, Allocator >& s )
+	{
+		return { s.begin(), s.end() };
+	}
 
 	template < typename CharT, typename Allocator >
 	inline std::basic_string< CharT, std::char_traits< CharT >, Allocator > to_std_string( const basic_istring< CharT, Allocator >& s )
