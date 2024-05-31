@@ -74,6 +74,119 @@ namespace mycpp
 		}
 	};
 
+	template < typename MemHandleType = HLOCAL >
+	class mem_locker
+	{
+	public:
+		typedef MemHandleType handle_type;
+
+		mem_locker() = delete;
+
+		explicit mem_locker( handle_type hMem )
+			: m_hLocal( hMem )
+		{}
+
+		void* lock()
+		{
+			return ::LocalLock( m_hLocal );
+		}
+
+		void unlock()
+		{
+			::LocalUnlock( m_hLocal );
+		}
+
+		handle_type reset( handle_type hNew )
+		{
+			handle_type hOld = m_hLocal;
+			m_hLocal = hNew;
+			return hOld;
+		}
+	private:
+		handle_type m_hLocal = null;
+	};
+
+	template <>
+	class mem_locker< HGLOBAL >
+	{
+	public:
+		typedef HGLOBAL handle_type;
+
+		mem_locker() = delete;
+
+		explicit mem_locker( handle_type hMem )
+			: m_hGlobal( hMem )
+		{}
+
+		void* lock()
+		{
+			return ::GlobalLock( m_hGlobal );
+		}
+
+		void unlock()
+		{
+			::GlobalUnlock( m_hGlobal );
+		}
+
+		handle_type reset( handle_type hNew )
+		{
+			handle_type hOld = m_hGlobal;
+			m_hGlobal = hNew;
+			return hOld;
+		}
+	private:
+		handle_type m_hGlobal = null;
+	};
+
+	template < typename MemHandleType >
+	class memory_locker : public mem_locker< MemHandleType >
+	{
+	public:
+		memory_locker() = delete;
+
+		explicit memory_locker( MemHandleType hmem )
+			: mem_locker< MemHandleType >( hmem )
+		{
+			m_ptr = this->lock();
+		}
+
+		memory_locker( const memory_locker& ) = delete;
+		memory_locker( memory_locker&& ) = default;
+
+		memory_locker& operator = ( const memory_locker& ) = delete;
+		memory_locker& operator = ( memory_locker&& ) = default;
+
+		template < typename T >
+		T* get () const
+		{
+			return reinterpret_cast< T* >( m_ptr );
+		}
+
+		~memory_locker()
+		{
+			if ( m_ptr != null )
+				this->unlock();
+		}
+
+		void swap( memory_locker& other )
+		{
+			reset( other.reset( null ) );
+			m_ptr = other.m_ptr;
+			other.m_ptr = null;
+		}
+	private:
+		void* m_ptr = null;
+	};
+
+	typedef memory_locker< HLOCAL > lmemlock_t;
+	typedef memory_locker< HGLOBAL > gmemlock_t;
+
+	template < typename MemHandleType >
+	memory_locker< MemHandleType > lock_memory( MemHandleType hmem )
+	{
+		return std::move( memory_locker< MemHandleType >( hmem ) );
+	}
+
 	template < typename T, typename AllocFunc, typename ... Args >
 	inline T* malloc_func_adapter( AllocFunc allocFunc, Args&& ... args )
 	{
@@ -196,6 +309,8 @@ namespace mycpp
 }
 
 #if defined( MYCPP_GLOBALTYPEDES )
+using mycpp::lmemlock_t;
+using mycpp::gmemlock_t;
 using mycpp::scoped_memory_t;
 using mycpp::shared_memory_t;
 using mycpp::scoped_local_memory;
