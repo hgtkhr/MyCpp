@@ -913,7 +913,7 @@ namespace mycpp
 
 	long_t Window::Send( uint msg, uint_t wparam, long_t lparam )
 	{
-		return ::SendMessageW( m_hwnd, msg, wparam, lparam );
+		return ::SendMessage( m_hwnd, msg, wparam, lparam );
 	}
 
 	long_t Window::SendNotify( uint msg, uint_t wparam, long_t lparam )
