@@ -49,56 +49,51 @@ namespace mycpp
 
 	typedef std::basic_string< char_t > string_t;
 
-	namespace details
+	class Null
 	{
-		class Null
+	public:
+		template< typename T >
+		constexpr operator T () const
 		{
-		public:
-			template< typename T >
-			constexpr operator T () const
-			{
-				return {};
-			}
-			template< typename T >
-			constexpr operator T* ( ) const
-			{
-				return nullptr;
-			}
-			template< typename T, typename C >
-			constexpr operator T C::* ( ) const
-			{
-				return nullptr;
-			}
-
-			Null() = default;
-
-			Null( const Null& ) = delete;
-			Null( const Null&& ) = delete;
-
-			Null& operator = ( const Null& ) = delete;
-			Null& operator = ( const Null&& ) = delete;
-
-			void operator & () const = delete;
-		};
-
-		constexpr Null null;
-
-		template < typename T >
-		[[nodiscard]]
-		constexpr bool operator == ( const T& value, const details::Null& )
+			return {};
+		}
+		template< typename T >
+		constexpr operator T* ( ) const
 		{
-			return ( value == static_cast< T >( null ) );
+			return nullptr;
+		}
+		template< typename T, typename C >
+		constexpr operator T C::* ( ) const
+		{
+			return nullptr;
 		}
 
-		template < typename T >
-		[[nodiscard]]
-		constexpr bool operator != ( const T& value, const details::Null& )
-		{
-			return ( value != static_cast< T >( null ) );
-		}
+		Null() = default;
+
+		Null( const Null& ) = delete;
+		Null( const Null&& ) = delete;
+
+		Null& operator = ( const Null& ) = delete;
+		Null& operator = ( const Null&& ) = delete;
+
+		void operator & () const = delete;
+	};
+
+	constexpr Null null;
+
+	template < typename T >
+	[[nodiscard]]
+	constexpr bool operator == ( const T& value, const Null& )
+	{
+		return ( value == static_cast< T >( null ) );
 	}
 
-	using details::null;
+	template < typename T >
+	[[nodiscard]]
+	constexpr bool operator != ( const T& value, const Null& )
+	{
+		return ( value != static_cast< T >( null ) );
+	}
 
 	template < typename T, std::size_t N >
 	inline constexpr std::size_t count_of( T( & )[N] )

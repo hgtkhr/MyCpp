@@ -75,13 +75,13 @@ namespace mycpp
 	}
 
 	[[nodiscard]]
-	constexpr bool operator == ( const hcursor_wrapper& lhs, const details::Null& )
+	constexpr bool operator == ( const hcursor_wrapper& lhs, const Null& )
 	{
 		return ( lhs.get_handle() == null );
 	}
 
 	[[nodiscard]]
-	constexpr bool operator != ( const hcursor_wrapper& lhs, const details::Null& )
+	constexpr bool operator != ( const hcursor_wrapper& lhs, const Null& )
 	{
 		return ( lhs.get_handle() != null );
 	}

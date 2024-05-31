@@ -353,7 +353,7 @@ namespace mycpp
 
 		cslock_t lock( &csObj );
 
-		return std::move( lock );
+		return lock;
 	}
 
 	csptr_t CreateCriticalSection( uint spinCount )
@@ -507,7 +507,7 @@ namespace mycpp
 						return null;
 
 					return std::make_shared< Process >( 
-						std::move( Process::Data( { process.release(), null, processEntry.th32ParentProcessID, 0 } ) ) );
+						Process::Data( { process.release(), null, processEntry.th32ParentProcessID, 0 } ) );
 				}
 			}
 			while ( ::Process32Next( snapshot.get(), &processEntry ) != FALSE );
@@ -519,7 +519,7 @@ namespace mycpp
 	Process* Process::GetCurrent()
 	{
 		static Process currentProcess(
-			std::move( Process::Data( { ::GetCurrentProcess(), PROCESS_PRIMARY_THREAD_HANDLE, ::GetCurrentProcessId(), PROCESS_PRIMARY_THREAD_ID } ) ) );
+			Process::Data( { ::GetCurrentProcess(), PROCESS_PRIMARY_THREAD_HANDLE, ::GetCurrentProcessId(), PROCESS_PRIMARY_THREAD_ID } ) );
 
 		return &currentProcess;
 	}
@@ -599,7 +599,7 @@ namespace mycpp
 		if ( result == FALSE )
 			exception< std::runtime_error >( FUNC_ERROR_MSG( "CreateProcess", "Failed. CommandLine = '%s', (0x%08x)", cmdLineArgs, ::GetLastError() ) );
 
-		return std::make_shared< Process >( std::move( Data( pi ) ) );
+		return std::make_shared< Process >( Data( pi ) );
 	}
 
 	string_t Process::GetName() const
@@ -716,14 +716,12 @@ namespace mycpp
 		if ( process == null )
 			return null;
 
-		return std::make_shared< Process >( 
-			std::move( Process::Data( { process, null, pid, 0 } ) ) );
+		return std::make_shared< Process >( Process::Data( { process, null, pid, 0 } ) );
 	}
 
 	processptr_t GetProcess( handle_t hProcess )
 	{
-		return std::make_shared< Process >(
-			std::move( Process::Data( { hProcess, null, ::GetProcessId( hProcess ), 0 } ) ) );
+		return std::make_shared< Process >( Process::Data( { hProcess, null, ::GetProcessId( hProcess ), 0 } ) );
 	}
 
 	path_t FindFilePath( const string_t& filename, const string_t& ext )

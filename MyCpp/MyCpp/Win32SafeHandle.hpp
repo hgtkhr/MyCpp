@@ -80,13 +80,13 @@ namespace mycpp
 	}
 
 	[[nodiscard]]
-	constexpr bool operator == ( const find_wrapper& lhs, const details::Null& )
+	constexpr bool operator == ( const find_wrapper& lhs, const Null& )
 	{
 		return ( lhs.get_handle() == null );
 	}
 
 	[[nodiscard]]
-	constexpr bool operator != ( const find_wrapper& lhs, const details::Null& )
+	constexpr bool operator != ( const find_wrapper& lhs, const Null& )
 	{
 		return ( lhs.get_handle() != null );
 	}
@@ -168,25 +168,25 @@ namespace mycpp
 	template < typename HandleType, typename Deleter >
 	inline scoped_handle_t< HandleType, Deleter > make_scoped_handle( HandleType handle, Deleter )
 	{
-		return std::move( scoped_handle_t< HandleType, Deleter >( handle ) );
+		return scoped_handle_t< HandleType, Deleter >( handle );
 	}
 
 	template < typename HandleType >
 	inline scoped_handle_t< HandleType > make_scoped_handle( HandleType handle )
 	{
-		return std::move( scoped_handle_t< HandleType >( handle ) );
+		return scoped_handle_t< HandleType >( handle );
 	}
 
 	template < typename HandleType, typename Deleter >
 	inline shared_handle_t< HandleType > make_shared_handle( HandleType handle, Deleter deleter )
 	{
-		return std::move( shared_handle_t< HandleType >( handle, deleter ) );
+		return shared_handle_t< HandleType >( handle, deleter );
 	}
 
 	template < typename HandleType >
 	inline shared_handle_t< HandleType > make_shared_handle( HandleType handle )
 	{
-		return std::move( shared_handle_t< HandleType >( handle, safe_handle_closer< HandleType >() ) );
+		return shared_handle_t< HandleType >( handle, safe_handle_closer< HandleType >() );
 	}
 }
 
