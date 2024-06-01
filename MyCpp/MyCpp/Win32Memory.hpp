@@ -274,9 +274,14 @@ namespace mycpp
 		template < typename Pointer >
 		Pointer lock()
 		{
+			if ( m_is_locked )
+				unlock();
+
 			Pointer ptr = static_cast< Pointer >( traits_type::lock( m_memhandle ) );
+
 			if ( ptr != null )
 				m_is_locked = true;
+
 			return ptr;
 		}
 
