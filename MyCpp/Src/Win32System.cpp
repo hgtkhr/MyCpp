@@ -818,7 +818,7 @@ namespace mycpp
 			if ( ::_tcsicmp( cstr_t( p->buffer ), p->className ) == 0 )
 			{
 				GetWindowName( hwnd, p->buffer );
-				if ( ::_tcsicmp( cstr_t( p->buffer ), p->windowName ) == 0 )
+				if ( p->windowName == null || ( p->windowName != null && ::_tcsicmp(cstr_t(p->buffer), p->windowName) == 0 ) )
 				{
 					p->hwnd = hwnd;
 					p->found = true;
@@ -976,7 +976,7 @@ namespace mycpp
 			null,
 			process->GetId(),
 			wndClassName.c_str(),
-			wndName.c_str(),
+			( !wndName.empty() ) ? wndName.c_str() : null,
 			std::move( vchar_t( FINDWINDOWINFO::BUFFER_SIZE ) ),
 			false
 		};

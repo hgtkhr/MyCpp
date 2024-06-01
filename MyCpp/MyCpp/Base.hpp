@@ -79,21 +79,21 @@ namespace mycpp
 		void operator & () const = delete;
 	};
 
+	template < typename T >
+	[[nodiscard]]
+	constexpr bool operator == ( const T& lhs, const Null& rhs )
+	{
+		return ( lhs == static_cast< T >( rhs ) );
+	}
+
+	template < typename T >
+	[[nodiscard]]
+	constexpr bool operator != ( const T& lhs, const Null& rhs )
+	{
+		return ( lhs != static_cast< T >( rhs ) );
+	}
+
 	constexpr Null null;
-
-	template < typename T >
-	[[nodiscard]]
-	constexpr bool operator == ( const T& value, const Null& )
-	{
-		return ( value == static_cast< T >( null ) );
-	}
-
-	template < typename T >
-	[[nodiscard]]
-	constexpr bool operator != ( const T& value, const Null& )
-	{
-		return ( value != static_cast< T >( null ) );
-	}
 
 	template < typename T, std::size_t N >
 	inline constexpr std::size_t count_of( T( & )[N] )
