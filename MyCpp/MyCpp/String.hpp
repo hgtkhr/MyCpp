@@ -2,7 +2,7 @@
 #include <locale>
 #include "MyCpp/StringUtils.hpp"
 
-namespace mycpp
+namespace MyCpp
 {
 	namespace details
 	{
@@ -104,12 +104,12 @@ namespace mycpp
 }
 
 #if defined( MYCPP_GLOBALTYPEDES )
-using mycpp::basic_istring;
-using mycpp::istring;
-using mycpp::wistring;
-using mycpp::u16istring;
-using mycpp::u32istring;
-using mycpp::istring_t;
+using MyCpp::basic_istring;
+using MyCpp::istring;
+using MyCpp::wistring;
+using MyCpp::u16istring;
+using MyCpp::u32istring;
+using MyCpp::istring_t;
 #if MYCPP_STDCPP_VERSION >= 202002L
 using mycpp::u8istring;
 #endif

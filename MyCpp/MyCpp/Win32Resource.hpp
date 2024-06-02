@@ -2,7 +2,7 @@
 #include <utility>
 #include "MyCpp/Win32SafeHandle.hpp"
 
-namespace mycpp
+namespace MyCpp
 {
 	// Define HCURSOR as an independent type since HCURSOR is a typedef of HICON and type ambiguity resolution is not possible.
 	// Design hcursor_wrapper to behave as a HCURSOR.
@@ -169,12 +169,12 @@ namespace mycpp
 }
 
 #if defined( MYCPP_GLOBALTYPEDES )
-using mycpp::HCURSOR_T;
-using mycpp::HBITMAP_T;
-using mycpp::HACCEL_T;
-using mycpp::HICON_T;
-using mycpp::HMENU_T;
-using mycpp::HCURSOR_T;
+using MyCpp::HCURSOR_T;
+using MyCpp::HBITMAP_T;
+using MyCpp::HACCEL_T;
+using MyCpp::HICON_T;
+using MyCpp::HMENU_T;
+using MyCpp::HCURSOR_T;
 #endif
 
 #undef LoadCursor
@@ -183,7 +183,7 @@ using mycpp::HCURSOR_T;
 
 inline 
 HCURSOR_T CreateCursor(
-	mycpp::handle_t  hInst,
+	MyCpp::handle_t  hInst,
 	int              xHotSpot,
 	int              yHotSpot,
 	int              nWidth,
@@ -203,12 +203,12 @@ HCURSOR_T CreateCursor(
 	);
 }
 
-inline HCURSOR_T LoadCursor( mycpp::handle_t hInstance, const char* lpCursorName )
+inline HCURSOR_T LoadCursor( MyCpp::handle_t hInstance, const char* lpCursorName )
 {
 	return ::LoadCursorA( reinterpret_cast< HINSTANCE >( hInstance ), lpCursorName );
 }
 
-inline HCURSOR_T LoadCursor( mycpp::handle_t hInstance, const wchar_t* lpCursorName )
+inline HCURSOR_T LoadCursor( MyCpp::handle_t hInstance, const wchar_t* lpCursorName )
 {
 	return ::LoadCursorW( reinterpret_cast< HINSTANCE >( hInstance ), lpCursorName );
 }

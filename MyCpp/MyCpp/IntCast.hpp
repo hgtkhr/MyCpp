@@ -5,7 +5,7 @@
 #include <type_traits>
 #include "MyCpp/Base.hpp"
 
-namespace mycpp
+namespace MyCpp
 {
 	namespace details
 	{

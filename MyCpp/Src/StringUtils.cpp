@@ -2,7 +2,7 @@
 #include "MyCpp/Error.hpp"
 #include "MyCpp/StringUtils.hpp"
 
-namespace mycpp
+namespace MyCpp
 {
 	namespace details
 	{

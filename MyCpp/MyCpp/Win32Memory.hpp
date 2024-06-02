@@ -2,7 +2,7 @@
 #include <memory>
 #include "MyCpp/Win32Base.hpp"
 
-namespace mycpp
+namespace MyCpp
 {
 	template < typename T >
 	struct local_memory_deleter
@@ -366,20 +366,20 @@ namespace mycpp
 }
 
 #if defined( MYCPP_GLOBALTYPEDES )
-using mycpp::heaphadle_t;
-using mycpp::memhandle_t;
-using mycpp::scoped_memory_t;
-using mycpp::shared_memory_t;
-using mycpp::scoped_local_memory;
-using mycpp::shared_local_memory;
-using mycpp::scoped_global_memory;
-using mycpp::shared_global_memory;
-using mycpp::scoped_virtual_memory;
-using mycpp::shared_virtual_memory;
-using mycpp::scoped_heap_memory;
-using mycpp::shared_heap_memory;
-using mycpp::scoped_local_memory_handle;
-using mycpp::shared_local_memory_handle;
-using mycpp::scoped_global_memory_handle;
-using mycpp::shared_global_memory_handle;
+using MyCpp::heaphadle_t;
+using MyCpp::memhandle_t;
+using MyCpp::scoped_memory_t;
+using MyCpp::shared_memory_t;
+using MyCpp::scoped_local_memory;
+using MyCpp::shared_local_memory;
+using MyCpp::scoped_global_memory;
+using MyCpp::shared_global_memory;
+using MyCpp::scoped_virtual_memory;
+using MyCpp::shared_virtual_memory;
+using MyCpp::scoped_heap_memory;
+using MyCpp::shared_heap_memory;
+using MyCpp::scoped_local_memory_handle;
+using MyCpp::shared_local_memory_handle;
+using MyCpp::scoped_global_memory_handle;
+using MyCpp::shared_global_memory_handle;
 #endif

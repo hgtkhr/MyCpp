@@ -5,7 +5,7 @@
 #include "MyCpp/Win32SafeHandle.hpp"
 #include "MyCpp/Win32Memory.hpp"
 
-namespace mycpp
+namespace MyCpp
 {
 	typedef std::filesystem::path path_t;
 	typedef GUID guid_t;
@@ -188,8 +188,8 @@ namespace mycpp
 		std::shared_ptr< Data > m_data;
 	};
 
-	typedef mycpp::Process::Ptr processptr_t;
-	typedef mycpp::Process::PtrSID sidptr_t;
+	typedef MyCpp::Process::Ptr processptr_t;
+	typedef MyCpp::Process::PtrSID sidptr_t;
 
 	class Window
 	{
@@ -246,7 +246,7 @@ namespace mycpp
 		Handle m_hwnd = null;
 	};
 
-	typedef mycpp::Window::Ptr wndptr_t;
+	typedef MyCpp::Window::Ptr wndptr_t;
 
 	wndptr_t FindProcessWindow( const processptr_t& process, const string_t& wndClassName, const string_t& wndName );
 
@@ -413,17 +413,17 @@ namespace mycpp
 }
 
 #if defined( MYCPP_GLOBALTYPEDES )
-using mycpp::path_t;
-using mycpp::int_t;
-using mycpp::uint_t;
-using mycpp::long_t;
-using mycpp::ulong_t;
-using mycpp::guid_t;
-using mycpp::module_handle_t;
-using mycpp::mutex_t;
-using mycpp::csptr_t;
-using mycpp::cslock_t;
-using mycpp::processptr_t;
-using mycpp::sidptr_t;
-using mycpp::wndptr_t;
+using MyCpp::path_t;
+using MyCpp::int_t;
+using MyCpp::uint_t;
+using MyCpp::long_t;
+using MyCpp::ulong_t;
+using MyCpp::guid_t;
+using MyCpp::module_handle_t;
+using MyCpp::mutex_t;
+using MyCpp::csptr_t;
+using MyCpp::cslock_t;
+using MyCpp::processptr_t;
+using MyCpp::sidptr_t;
+using MyCpp::wndptr_t;
 #endif

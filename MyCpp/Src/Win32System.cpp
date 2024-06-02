@@ -22,7 +22,7 @@
 #define REGVALUE_ERROR( calledFunction, key, value, errorCode ) \
 	_T( "[%s()] %s(\"%s\\%s\") Failed : 0x%08x" ), _T( __FUNCTION__ ), _T( calledFunction ), ( key ), ( value ), ( errorCode )
 
-namespace mycpp
+namespace MyCpp
 {
 	namespace
 	{
@@ -861,15 +861,20 @@ namespace mycpp
 			::GetWindowThreadProcessId( hwnd, &pid );
 			if ( pid == p->pid )
 			{
-				// First check the first value.
-				if ( EnumChildWindowsProc( hwnd, lParam ) == FALSE )
-					return FALSE;
-
-				// If not found, also look for child windows.
-				::EnumChildWindows( hwnd, &EnumChildWindowsProc, lParam );
+				GetWindowClassName( hwnd, p->buffer );
+				if ( ::_tcsicmp( cstr_t( p->buffer ), p->className ) == 0 )
+				{
+					GetWindowName( hwnd, p->buffer );
+					if ( p->windowName == null || ( p->windowName != null && ::_tcsicmp( cstr_t( p->buffer ), p->windowName ) == 0 ) )
+					{
+						p->hwnd = hwnd;
+						p->found = true;
+						return FALSE;
+					}
+				}
 			}
 
-			return ( p->found ) ? FALSE : TRUE;
+			return TRUE;
 		}
 	}
 
@@ -952,7 +957,7 @@ namespace mycpp
 			null,
 			0,
 			wndClassName.c_str(),
-			wndName.c_str(),
+			( !wndName.empty() ) ? wndName.c_str() : null,
 			std::move( vchar_t( FINDWINDOWINFO::BUFFER_SIZE ) ),
 			false
 		};
