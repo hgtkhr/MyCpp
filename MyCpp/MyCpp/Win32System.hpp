@@ -230,7 +230,7 @@ namespace mycpp
 
 		long_t Send( uint msg, uint_t wparam, long_t lparam );
 		long_t SendNotify( uint msg, uint_t wparam, long_t lparam );
-		long_t SendTimeout( uint msg, uint_t wparam, long_t lparam, uint flags, uint milliseconds );
+		std::pair< long_t, dword_t > SendTimeout( uint msg, uint_t wparam, long_t lparam, uint flags, uint milliseconds );
 		long_t Post( uint msg, uint_t wparam, long_t lparam );
 
 		Ptr GetParent() const;

@@ -921,13 +921,12 @@ namespace mycpp
 		return ::SendNotifyMessage( m_hwnd, msg, wparam, lparam );
 	}
 
-	long_t Window::SendTimeout( uint msg, uint_t wparam, long_t lparam, uint flags, uint milliseconds )
+	std::pair< long_t, dword_t > Window::SendTimeout( uint msg, uint_t wparam, long_t lparam, uint flags, uint milliseconds )
 	{
-		ulong_t result = 0;
+		dword_t msgResult = 0;
+		long_t result = ::SendMessageTimeout( m_hwnd, msg, wparam, lparam, flags, milliseconds, &msgResult );
 
-		::SendMessageTimeout( m_hwnd, msg, wparam, lparam, flags, milliseconds, &result );
-
-		return result;
+		return std::make_pair( result, msgResult );
 	}
 
 	long_t Window::Post( uint msg, uint_t wparam, long_t lparam )

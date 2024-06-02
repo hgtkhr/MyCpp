@@ -14,6 +14,7 @@ namespace mycpp
 	typedef UINT_PTR uint_t;
 	typedef LONG_PTR long_t;
 	typedef ULONG_PTR ulong_t;
+	typedef DWORD_PTR dword_t;
 }
 
 #if defined( MYCPP_GLOBALTYPEDES )
