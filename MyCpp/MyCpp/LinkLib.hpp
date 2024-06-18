@@ -1,5 +1,9 @@
 #pragma once
-#if defined ( _MSC_VER ) && !defined( MYCPP_NOAUTOLINKLIB )
+
+#ifndef __MYCPP_LINKLIB_HPP__
+#define __MYCPP_LINKLIB_HPP__
+
+#ifndef MYCPP_NOAUTOLINKLIB
 
 #define MYCPP_BASE_NAME_ "MyCpp"
 
@@ -29,3 +33,5 @@
 #undef MYCPP_DEBUG_
 
 #endif
+
+#endif // ! __MYCPP_LINKLIB_HPP__

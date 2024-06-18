@@ -1,4 +1,8 @@
 #pragma once
+
+#ifndef __MYCPP_STRING_HPP__
+#define __MYCPP_STRING_HPP__
+
 #include <locale>
 #include "MyCpp/StringUtils.hpp"
 
@@ -114,3 +118,5 @@ using MyCpp::istring_t;
 using mycpp::u8istring;
 #endif
 #endif
+
+#endif // ! __MYCPP_STRING_HPP__

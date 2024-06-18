@@ -958,7 +958,7 @@ namespace MyCpp
 			0,
 			wndClassName.c_str(),
 			( !wndName.empty() ) ? wndName.c_str() : null,
-			std::move( vchar_t( FINDWINDOWINFO::BUFFER_SIZE ) ),
+			vchar_t( FINDWINDOWINFO::BUFFER_SIZE ),
 			false
 		};
 
@@ -981,7 +981,7 @@ namespace MyCpp
 			process->GetId(),
 			wndClassName.c_str(),
 			( !wndName.empty() ) ? wndName.c_str() : null,
-			std::move( vchar_t( FINDWINDOWINFO::BUFFER_SIZE ) ),
+			vchar_t( FINDWINDOWINFO::BUFFER_SIZE ),
 			false
 		};
 

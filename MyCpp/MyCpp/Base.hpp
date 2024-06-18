@@ -1,4 +1,10 @@
 #pragma once
+#ifndef __MYCPP_BASE_HPP__
+#define __MYCPP_BASE_HPP__
+
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wpragma-once-outside-header"
+#endif
 
 #if defined( _MSVC_LANG )
 #define MYCPP_STDCPP_VERSION _MSVC_LANG
@@ -28,7 +34,7 @@
 
 namespace MyCpp
 {
-	typedef TCHAR char_t;
+	typedef _TCHAR char_t;
 
 	typedef unsigned int uint;
 	typedef unsigned long ulong;
@@ -132,3 +138,5 @@ using MyCpp::vchar_t;
 using MyCpp::vwchar;
 using MyCpp::word;
 #endif
+
+#endif // ! __MYCPP_BASE_HPP__

@@ -1,4 +1,8 @@
 #pragma once
+
+#ifndef __MYCPP_WIN32SYSTEM_HPP__
+#define __MYCPP_WIN32SYSTEM_HPP__
+
 #include <cstring>
 #include <filesystem>
 #include "MyCpp/StringUtils.hpp"
@@ -11,12 +15,24 @@ namespace MyCpp
 	typedef GUID guid_t;
 	typedef HMODULE module_handle_t;
 
+	namespace Details
+	{
+		template < bool IsNativeString = true >
+		struct path_to_string
+		{
+			static const string_t& string( const path_t& p ) { return p.native(); }
+		};
+
+		template <>
+		struct path_to_string< false >
+		{
+			static string_t string( const path_t& p ) { return p.string< char_t >(); }
+		};
+	}
+
 	inline string_t to_string_t( const path_t& p )
 	{
-		if constexpr ( std::is_same_v< string_t, path_t::string_type > )
-			return p.native();
-		else
-			return p.string< char_t >();
+		return Details::path_to_string< std::is_same_v< string_t, path_t::string_type > >::string( p );
 	}
 
 	typedef std::shared_ptr< CRITICAL_SECTION > csptr_t;
@@ -427,3 +443,5 @@ using MyCpp::processptr_t;
 using MyCpp::sidptr_t;
 using MyCpp::wndptr_t;
 #endif
+
+#endif // ! __MYCPP_WIN32SYSTEM_HPP__

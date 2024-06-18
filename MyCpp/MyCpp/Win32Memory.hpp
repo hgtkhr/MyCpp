@@ -1,4 +1,8 @@
 #pragma once
+
+#ifndef __MYCPP_WIN32MEMORY__
+#define __MYCPP_WIN32MEMORY__
+
 #include <memory>
 #include "MyCpp/Win32Base.hpp"
 
@@ -383,3 +387,5 @@ using MyCpp::shared_local_memory_handle;
 using MyCpp::scoped_global_memory_handle;
 using MyCpp::shared_global_memory_handle;
 #endif
+
+#endif // ! __MYCPP_WIN32MEMORY__

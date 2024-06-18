@@ -1,4 +1,8 @@
 #pragma once
+
+#ifndef __MY_CPP_STRINGUTILS_HPP__
+#define __MY_CPP_STRINGUTILS_HPP__
+
 #include <cstdarg>
 #include <iterator>
 #include <algorithm>
@@ -204,3 +208,5 @@ namespace MyCpp
 		return null;
 	}
 }
+
+#endif // ! __MY_CPP_STRINGUTILS_HPP__

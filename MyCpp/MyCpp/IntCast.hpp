@@ -1,4 +1,8 @@
 #pragma once
+
+#ifndef __MYCPP_INTCAST_HPP__
+#define __MYCPP_INTCAST_HPP__
+
 #include <cstdint>
 #include <limits>
 #include <algorithm>
@@ -155,3 +159,5 @@ namespace MyCpp
 		return details::reinterpret_pointer< T >( value );
 	}
 }
+
+#endif // ! __MYCPP_INTCAST_HPP__

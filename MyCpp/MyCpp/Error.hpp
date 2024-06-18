@@ -1,6 +1,14 @@
 #pragma once
+
+#ifndef __MYCPP_ERROR_HPP__
+#define __MYCPP_ERROR_HPP__
+
 #include <stdexcept>
 #include "MyCpp/StringUtils.hpp"
+
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Winvalid-token-paste"
+#endif
 
 #define FUNC_ERROR( calledFunction ) \
 	_T( "[%s()] %s() Failed." ), _T( __FUNCTION__ ), _T( calledFunction )
@@ -135,3 +143,5 @@ namespace MyCpp
 		notfier( mem.first );
 	}
 }
+
+#endif // ! __MYCPP_ERROR_HPP__

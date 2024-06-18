@@ -1,4 +1,8 @@
 #pragma once
+
+#ifndef __MYCPP_WIN32RESOURCE_HPP__
+#define __MYCPP_WIN32RESOURCE_HPP__
+
 #include <utility>
 #include "MyCpp/Win32SafeHandle.hpp"
 
@@ -227,3 +231,5 @@ inline HCURSOR_T CopyCursor( HCURSOR_T cursor )
 {
 	return ::CopyIcon( cursor );
 }
+
+#endif // ! __MYCPP_WIN32RESOURCE_HPP__

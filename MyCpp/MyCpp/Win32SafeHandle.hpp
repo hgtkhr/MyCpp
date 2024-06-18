@@ -1,4 +1,8 @@
 #pragma once
+
+#ifndef __MYCPP_WIN32SAFEHANDLE_HPP__
+#define __MYCPP_WIN32SAFEHANDLE_HPP__
+
 #include <memory>
 #include "MyCpp/Base.hpp"
 #include "MyCpp/Win32Base.hpp"
@@ -205,3 +209,5 @@ using MyCpp::shared_generic_handle;
 using MyCpp::shared_reg_handle;
 using MyCpp::shared_svc_handle;
 #endif
+
+#endif // ! __MYCPP_WIN32SAFEHANDLE_HPP__
