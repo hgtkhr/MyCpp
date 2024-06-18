@@ -2,10 +2,6 @@
 #ifndef __MYCPP_BASE_HPP__
 #define __MYCPP_BASE_HPP__
 
-#ifdef __clang__
-#pragma clang diagnostic ignored "-Wpragma-once-outside-header"
-#endif
-
 #if defined( _MSVC_LANG )
 #define MYCPP_STDCPP_VERSION _MSVC_LANG
 #elif defined ( __cplusplus )
