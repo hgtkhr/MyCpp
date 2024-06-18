@@ -3,7 +3,6 @@
 #ifndef __MYCPP_WIN32SYSTEM_HPP__
 #define __MYCPP_WIN32SYSTEM_HPP__
 
-#include <cstring>
 #include <filesystem>
 #include "MyCpp/StringUtils.hpp"
 #include "MyCpp/Win32SafeHandle.hpp"
