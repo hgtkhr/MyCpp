@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef __MYCPP_WIN32BASE_HPP
-#define __MYCPP_WIN32BASE_HPP
+#ifndef __MYCPP_WIN32BASE_HPP__
+#define __MYCPP_WIN32BASE_HPP__
 
 #include "MyCpp/Base.hpp"
 #if !defined( NOMINMAX )
@@ -28,4 +28,4 @@ using MyCpp::long_t;
 using MyCpp::ulong_t;
 #endif
 
-#endif // ! __MYCPP_WIN32BASE_HPP
+#endif // ! __MYCPP_WIN32BASE_HPP__
