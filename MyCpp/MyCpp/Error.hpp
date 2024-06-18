@@ -6,10 +6,6 @@
 #include <stdexcept>
 #include "MyCpp/StringUtils.hpp"
 
-#ifdef __clang__
-#pragma clang diagnostic ignored "-Winvalid-token-paste"
-#endif
-
 #define FUNC_ERROR( calledFunction ) \
 	_T( "[%s()] %s() Failed." ), _T( __FUNCTION__ ), _T( calledFunction )
 
@@ -17,10 +13,10 @@
 	_T( "[%s()] %s() Failed : 0x%08x" ), _T( __FUNCTION__ ), _T( calledFunction ), ( errorCode )
 
 #define FUNC_ERROR_MSG( calledFunction, msg, ... ) \
-	_T( "[%s()] %s() : " ## msg ), _T( __FUNCTION__ ), _T( calledFunction ), __VA_ARGS__
+	_T( "[%s()] %s() : "  msg ), _T( __FUNCTION__ ), _T( calledFunction ), __VA_ARGS__
 
 #define ERROR_MSG( msg, ... ) \
-	_T( "[%s()] " ## msg ), _T( __FUNCTION__ ), __VA_ARGS__
+	_T( "[%s()] "  msg ), _T( __FUNCTION__ ), __VA_ARGS__
 
 namespace MyCpp
 {
