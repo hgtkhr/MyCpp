@@ -12,6 +12,10 @@
 #error "A compiler compatible with C++17 or later is required to use the library."
 #endif
 
+#if defined( _DEBUG ) || defined ( DEBUG )
+#define MYCPP_DEBUG 1
+#endif
+
 #include <tchar.h>
 #include <string>
 #include <vector>

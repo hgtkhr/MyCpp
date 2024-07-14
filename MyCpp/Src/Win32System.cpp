@@ -360,11 +360,10 @@ namespace MyCpp
 	{
 		CRITICAL_SECTION* newCriticalSection = lcallocate< CRITICAL_SECTION >( LPTR, sizeof( CRITICAL_SECTION ) );
 
-#ifdef MYCPP_DEBUG
-		::InitializeCriticalSectionEx( newCriticalSection, spinCount, 0 );
-#else
-		::InitializeCriticalSectionEx( newCriticalSection, spinCount, CRITICAL_SECTION_NO_DEBUG_INFO );
-#endif
+		if constexpr ( MYCPP_DEBUG == 1 )
+			::InitializeCriticalSectionEx( newCriticalSection, spinCount, 0 );
+		else
+			::InitializeCriticalSectionEx( newCriticalSection, spinCount, CRITICAL_SECTION_NO_DEBUG_INFO );
 
 		return { newCriticalSection, CriticalSectionDeleter() };
 	}
