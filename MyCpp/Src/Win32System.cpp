@@ -159,12 +159,12 @@ namespace MyCpp
 			return std::filesystem::weakly_canonical( szSearchPath.data() );
 		}
 
-		inline handle_t OpenProcessOrLimitedRights( dword dwDesiredAccess, bool bInheritHandle, dword dwProcessId )
+		inline handle_t OpenProcessStandardRightsOrLimitedRights( dword dwDesiredAccess, bool bInheritHandle, dword dwProcessId )
 		{
 			handle_t ph = ::OpenProcess( PROCESS_STANDARD_RIGHTS | dwDesiredAccess, ( bInheritHandle ) ? TRUE : FALSE, dwProcessId );
 
 			if ( ph == null )
-				ph = ::OpenProcess( PROCESS_LIMITED_RIGHTS | dwDesiredAccess, ( bInheritHandle ) ? TRUE : FALSE, dwProcessId );
+				ph = ::OpenProcess( ( dwDesiredAccess & ~PROCESS_STANDARD_RIGHTS ) | PROCESS_LIMITED_RIGHTS, ( bInheritHandle ) ? TRUE : FALSE, dwProcessId );
 
 			return ph;
 		}
@@ -198,7 +198,7 @@ namespace MyCpp
 
 			for ( const auto& pid : pids )
 			{
-				if ( auto ph = OpenProcessOrLimitedRights( accessMode | PROCESS_STANDARD_RIGHTS, inheritHandle, pid ) )
+				if ( auto ph = OpenProcessStandardRightsOrLimitedRights( accessMode, inheritHandle, pid ) )
 				{
 					adaptive_load( szProcessPath, szProcessPath.size(),
 						[&ph] ( char_t* s, std::size_t n )
@@ -235,7 +235,7 @@ namespace MyCpp
 				{
 					if ( ::_tcsicmp( processEntry.szExeFile, searchFileName.c_str() ) == 0 )
 					{
-						if ( auto ph = OpenProcessOrLimitedRights( accessMode | PROCESS_STANDARD_RIGHTS, inheritHandle, processEntry.th32ProcessID ) )
+						if ( auto ph = OpenProcessStandardRightsOrLimitedRights( accessMode, inheritHandle, processEntry.th32ProcessID ) )
 							return GetProcess( ph );
 					}
 				}
@@ -502,7 +502,7 @@ namespace MyCpp
 			{
 				if ( processEntry.th32ProcessID == processId )
 				{
-					scoped_generic_handle process( OpenProcessOrLimitedRights( PROCESS_STANDARD_RIGHTS, false, processEntry.th32ParentProcessID ) );
+					scoped_generic_handle process( OpenProcessStandardRightsOrLimitedRights( 0, false, processEntry.th32ParentProcessID ) );
 
 					if ( !process )
 						return null;
@@ -713,7 +713,7 @@ namespace MyCpp
 		if ( std::find( pids.begin(), pids.end(), pid) == pids.end() )
 			return null;
 
-		handle_t process = OpenProcessOrLimitedRights( PROCESS_STANDARD_RIGHTS, false, pid );
+		handle_t process = OpenProcessStandardRightsOrLimitedRights( 0, false, pid );
 		if ( process == null )
 			return null;
 
