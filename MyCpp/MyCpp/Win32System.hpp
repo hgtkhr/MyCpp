@@ -235,13 +235,13 @@ namespace MyCpp
 			return GetHandle();
 		}
 
-		string_t Text() const;
-		string_t Text( const string_t& text);
+		string_t GetText() const;
+		string_t SetText( const string_t& text);
 
-		long_t Attribute( int index );
-		long_t Attribute( int index, long_t value );
+		long_t GetAttribute( int index ) const;
+		long_t SetAttribute( int index, long_t value );
 
-		string_t ClassName() const;
+		string_t GetClassNameText() const;
 
 		long_t Send( uint msg, uint_t wparam, long_t lparam );
 		long_t SendNotify( uint msg, uint_t wparam, long_t lparam );

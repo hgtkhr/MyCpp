@@ -879,7 +879,7 @@ namespace MyCpp
 		}
 	}
 
-	string_t Window::Text() const
+	string_t Window::GetText() const
 	{
 		long_t nLength = ::SendMessage( m_hwnd, WM_GETTEXTLENGTH, 0, 0 );
 		vchar_t buffer( nLength + 1 );
@@ -889,26 +889,26 @@ namespace MyCpp
 		return cstr_t( buffer );
 	}
 
-	string_t Window::Text( const string_t& text )
+	string_t Window::SetText( const string_t& text )
 	{
-		string_t old = this->Text();
+		string_t old = this->GetText();
 
 		this->Send( WM_SETTEXT, 0, reinterpret_cast< long_t >( text.c_str() ) );
 
 		return old;
 	}
 
-	long_t Window::Attribute( int index, long_t value )
-	{
-		return ::SetWindowLongPtr( m_hwnd, index, value );
-	}
-	
-	long_t Window::Attribute( int index )
+	long_t Window::GetAttribute( int index ) const
 	{
 		return ::GetWindowLongPtr( m_hwnd, index );
 	}
 
-	string_t Window::ClassName() const
+	long_t Window::SetAttribute( int index, long_t value )
+	{
+		return ::SetWindowLongPtr( m_hwnd, index, value );
+	}
+	
+	string_t Window::GetClassNameText() const
 	{
 		vchar_t buffer;
 
