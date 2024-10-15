@@ -653,7 +653,7 @@ namespace MyCpp
 		{
 			scoped_generic_handle snapshot ( ::CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, processId ) );
 	
-			if ( snapshot.get() != INVALID_HANDLE_VALUE )
+			if ( snapshot.get() == INVALID_HANDLE_VALUE )
 				return ; // abort function.
 			
 			THREADENTRY32 thinfo;
