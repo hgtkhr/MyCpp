@@ -236,7 +236,7 @@ namespace MyCpp
 		}
 
 		string_t GetText() const;
-		string_t SetText( const string_t& text);
+		string_t SetText( const string_t& text );
 
 		long_t GetAttribute( int index ) const;
 		long_t SetAttribute( int index, long_t value );

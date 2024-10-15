@@ -590,7 +590,7 @@ namespace MyCpp
 									   , cstr_t( cmdLineArgs )
 									   , null
 									   , null
-									   , inheritHandle
+									   , ( inheritHandle ) ? TRUE : FALSE
 									   , creationFlags
 									   , envVariables
 									   , to_string_t( appCurrent ).c_str()
